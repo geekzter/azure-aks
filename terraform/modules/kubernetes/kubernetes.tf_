@@ -1,0 +1,215 @@
+# Configure Kubernetes provider using AKS output
+# Source: https://github.com/MicrosoftDocs/azure-docs/issues/20862
+
+
+provider "kubernetes" {
+  host                         = azurerm_kubernetes_cluster.ttaks.kube_config.0.host
+  username                     = azurerm_kubernetes_cluster.ttaks.kube_config.0.username
+  password                     = azurerm_kubernetes_cluster.ttaks.kube_config.0.password
+  client_certificate           = base64decode(azurerm_kubernetes_cluster.ttaks.kube_config.0.client_certificate)
+  client_key                   = base64decode(azurerm_kubernetes_cluster.ttaks.kube_config.0.client_key)
+  cluster_ca_certificate       = base64decode(azurerm_kubernetes_cluster.ttaks.kube_config.0.cluster_ca_certificate)
+
+/*
+  # RBAC
+  host                         = azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.host
+# username                     = azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.username
+# password                     = azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.password
+  client_certificate           = base64decode(azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.client_certificate)
+  client_key                   = base64decode(azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.client_key)
+  cluster_ca_certificate       = base64decode(azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.cluster_ca_certificate) */
+
+# load_config_file             = false
+}
+
+# Make sure proxy access to dashboard works
+#  kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
+resource "kubernetes_cluster_role_binding" "dashboard" {
+  metadata {
+    name                       = "kubernetes-dashboard"
+  }
+
+  role_ref {
+    api_group                  = "rbac.authorization.k8s.io"
+    kind                       = "ClusterRole"
+    name                       = "cluster-admin"
+  }
+
+  subject {
+    api_group                  = ""
+    kind                       = "ServiceAccount"
+    name                       = "kubernetes-dashboard"
+    namespace                  = "kube-system"
+  }
+}
+
+# Tiller is the server side component required for Helm
+resource "kubernetes_service_account" "tiller" {
+  automount_service_account_token = true
+  metadata {
+    name                       = "tiller"
+    namespace                  = "kube-system"
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "tiller" {
+  metadata {
+    name                       = "tiller-cluster-rule"
+  }
+
+  role_ref {
+    api_group                  = "rbac.authorization.k8s.io" # With Kubernetes RBAC enabled
+    kind                       = "ClusterRole"
+    name                       = "cluster-admin"
+  }
+
+  subject {
+    api_group                  = ""
+    kind                       = "ServiceAccount"
+    name                       = kubernetes_service_account.tiller.metadata.0.name
+    namespace                  = kubernetes_service_account.tiller.metadata.0.namespace
+  }
+}
+
+locals {
+  kube_config_path             = var.kube_config_path != "" ? var.kube_config_path : format("%s/.kube/config",path.module)
+}
+
+resource "local_file" "kube_config" {
+  # kube config
+  filename                     = local.kube_config_path
+  content                      = azurerm_kubernetes_cluster.ttaks.kube_config_raw
+
+  depends_on                   = [kubernetes_service_account.tiller,kubernetes_cluster_role_binding.tiller] 
+}
+
+resource "null_resource" "kube_acr_auth" {
+  triggers                     = {
+    allways                    = uuid() # Trigger every run
+    config                     = local_file.kube_config.filename
+  }
+
+  # HACK: kubernetes_secret requires storing passwords in .docker/config.json, so use kubectl
+  provisioner "local-exec" {
+  # command                    = "kubectl create secret docker-registry acr-auth --docker-server ${azurerm_container_registry.acr.login_server} --docker-username ${var.aks_sp_application_id} --docker-password ${var.aks_sp_application_secret} --docker-email not@used.com"
+    # Create/Update secret, this approach prevents stderr
+    command                    = "kubectl create secret docker-registry acr-auth --docker-server ${azurerm_container_registry.acr.login_server} --docker-username ${var.aks_sp_application_id} --docker-password ${var.aks_sp_application_secret} --docker-email not@used.com --dry-run -o yaml | kubectl apply -f -"
+    environment                = {
+      KUBECONFIG               = local.kube_config_path
+    }
+  }
+
+  depends_on                   = [local_file.kube_config] 
+} 
+
+# Installs tiller, dependent on Kubernetes service account and role binding created in Terraform
+resource "null_resource" "helm_config" {
+  triggers                     = {
+    allways                    = uuid() # Trigger every run
+    config                     = local_file.kube_config.filename
+  }
+
+  # HACK: workaround as Helm Terraform provider can't properly install tiller (9-1-2018, provider.helm version 0.7)
+  provisioner "local-exec" {
+    command                    = "helm init --service-account tiller --upgrade --wait"
+    environment                = {
+      KUBECONFIG               = local.kube_config_path
+      # Helm documentation is ambiguous as to the name of the environment variable that defines HELM HOME
+      # https://github.com/helm/helm/blob/master/docs/helm/helm_home.md
+      HELM_HOME                = "${path.module}/.helm"
+      # https://docs.helm.sh/helm/
+      HELM-HOME                = "${path.module}/.helm"
+    }
+  }
+
+  depends_on                   = [kubernetes_service_account.ttsa] 
+} 
+
+# Service account required by TT solution
+resource "kubernetes_service_account" "ttsa" {
+  metadata {
+    name                       = "ttsa"
+  # namespace                  = "default"
+  }
+
+  secret {
+    name                       = "acr-auth"
+  }
+
+  depends_on                   = [null_resource.kube_acr_auth] 
+}
+
+provider "helm" {
+  debug                        = "true"
+
+  kubernetes {
+    host                       = azurerm_kubernetes_cluster.ttaks.kube_config.0.host
+  # username                   = azurerm_kubernetes_cluster.ttaks.kube_config.0.username
+  # password                   = azurerm_kubernetes_cluster.ttaks.kube_config.0.password
+    client_certificate         = base64decode(azurerm_kubernetes_cluster.ttaks.kube_config.0.client_certificate)
+    client_key                 = base64decode(azurerm_kubernetes_cluster.ttaks.kube_config.0.client_key)
+    cluster_ca_certificate     = base64decode(azurerm_kubernetes_cluster.ttaks.kube_config.0.cluster_ca_certificate)
+
+/* 
+    # RBAC
+    host                         = azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.host
+  # username                     = azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.username
+  # password                     = azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.password
+    client_certificate           = base64decode(azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.client_certificate)
+    client_key                   = base64decode(azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.client_key)
+    cluster_ca_certificate       = base64decode(azurerm_kubernetes_cluster.ttaks.kube_admin_config.0.cluster_ca_certificate) */
+  }
+
+  install_tiller               = "true"
+  #tiller_image                 = "gcr.io/kubernetes-helm/tiller:v2.12.1"
+  service_account              = kubernetes_service_account.tiller.metadata.0.name
+  namespace                    = kubernetes_service_account.tiller.metadata.0.namespace
+  override                     = ["spec.template.spec.automountserviceaccounttoken=true"]
+}
+
+# BUG: Helm prodiver requires local state (.helm/repository/repositories.yaml) which the Helm provider doesn't manage
+# resource "helm_repository" "stable" {
+#   name                         = "stable"
+#   url                          = "https://kubernetes-charts.storage.googleapis.com"
+#   depends_on                   = [null_resource.helm_config]
+# }
+# resource "helm_repository" "incubator" {
+#   name                         = "incubator"
+#   url                          = "https://kubernetes-charts-incubator.storage.googleapis.com"
+#   depends_on                   = [null_resource.helm_config]
+# } 
+
+# Add cert manager required for SSL
+/* 
+resource "helm_release" "cert_manager" {
+  name                         = "cert-manager"
+  namespace                    = "kube-system"
+  repository                   = "https://kubernetes-charts.storage.googleapis.com"
+# repository                   = helm_repository.stable.url
+# repository                   = helm_repository.incubator.metadata.0.name
+# chart                        = "stable/cert-manager"
+  chart                        = "cert-manager"
+  version                      = "v0.4.1"
+
+  # set {
+  #   name  = "rbac.create"
+  #   value = "false"
+  # }
+
+  # set {
+  #   name  = "ingressShim.defaultIssuerName"
+  #   value = "letsencrypt-prod"
+  # }
+
+  # set {
+  #   name  = "ingressShim.defaultIssuerKind"
+  #   value = "ClusterIssuer"
+  # }
+
+  # set {
+  #   name  = "serviceAccount.create"
+  #   value = "false"
+  # }
+
+  depends_on                   = [null_resource.helm_config]
+} */
