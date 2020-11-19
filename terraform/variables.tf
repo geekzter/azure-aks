@@ -33,6 +33,11 @@ variable location {
   default     = "westeurope"
 }
 
+variable peer_network_id {
+  description = "Virtal network to be peered with. This is usefull to run Terraform from and be able to access a private API server."
+  default     = ""
+}
+
 variable resource_prefix {
   description = "The prefix to put in front of resource names created"
   default     = "K8S"

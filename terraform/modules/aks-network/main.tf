@@ -316,3 +316,17 @@ resource azurerm_firewall_application_rule_collection aks_app_rules {
 #     protocols                  = ["TCP"]
 #   }
 # }
+
+# Set up name resolution for peered network
+data azurerm_private_dns_zone api_server_domain {
+  name                         = local.api_server_domain
+  resource_group_name          = data.azurerm_kubernetes_cluster.aks.node_resource_group
+}
+resource azurerm_private_dns_zone_virtual_network_link spi_server_domain {
+  name                         = "${data.azurerm_private_dns_zone.api_server_domain.name}-peer-link"
+  resource_group_name          = data.azurerm_private_dns_zone.api_server_domain.resource_group_name
+  private_dns_zone_name        = data.azurerm_private_dns_zone.api_server_domain.name
+  virtual_network_id           = var.peer_network_id
+
+  count                        = var.peer_network_id != "" ? 1 : 0
+}

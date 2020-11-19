@@ -120,11 +120,11 @@ resource azurerm_kubernetes_cluster aks {
   #   type                       = "SystemAssigned"
   # }
 
-  linux_profile {
-    admin_username             = var.admin_username
-    dynamic ssh_key {
-      for_each                 = range(fileexists(var.ssh_public_key_file) ? 1 : 0)
-      content {
+  dynamic linux_profile {
+    for_each                   = range(fileexists(var.ssh_public_key_file) ? 1 : 0)
+    content {
+      admin_username           = var.admin_username
+      ssh_key {
         key_data               = file(var.ssh_public_key_file)
       }
     }

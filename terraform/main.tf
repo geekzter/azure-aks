@@ -148,6 +148,7 @@ module network {
   source                       = "./modules/network"
   resource_group_name          = azurerm_resource_group.rg.name
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
+  peer_network_id              = var.peer_network_id
   subnets                      = [
     "nodes"
   ]
@@ -182,6 +183,7 @@ module aks_network {
   admin_ip_group_id            = module.network.admin_ip_group_id
   aks_id                       = module.aks.0.aks_id
   firewall_id                  = module.network.firewall_id
+  peer_network_id              = var.peer_network_id
   subnet_id                    = module.network.subnet_ids["nodes"]
 
   count                        = var.deploy_aks ? 1 : 0
