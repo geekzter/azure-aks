@@ -1,8 +1,9 @@
 terraform {
   required_providers {
     azuread                    = "~> 1.0.0"
-    azurerm                    = "~> 2.35"
-    # external                   = "~> 1.2"
+    azurerm                    = "~> 2.36"
+    # dns                        = "~> 3.0.0"
+    external                   = "~> 2.0.0"
     helm                       = "~> 1.3.2"
     http                       = "~> 2.0.0"
     kubernetes                 = "~> 1.13.3"
@@ -32,10 +33,10 @@ provider helm {
   # debug                        = true
 
   kubernetes {
-    host                       = module.aks.kubernetes_host
-    client_certificate         = base64decode(module.aks.kubernetes_client_certificate)
-    client_key                 = base64decode(module.aks.kubernetes_client_key)
-    cluster_ca_certificate     = base64decode(module.aks.kubernetes_cluster_ca_certificate)
+    host                       = var.deploy_aks ? module.aks.0.kubernetes_host : ""
+    client_certificate         = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_certificate) : ""
+    client_key                 = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_key) : ""
+    cluster_ca_certificate     = var.deploy_aks ? base64decode(module.aks.0.kubernetes_cluster_ca_certificate) : ""
   }
 
   # override                     = ["spec.template.spec.automountserviceaccounttoken=true"]
@@ -43,8 +44,8 @@ provider helm {
 
 # Use AKS to prepare Kubernetes provider
 provider kubernetes {
-  host                         = module.aks.kubernetes_host
-  client_certificate           = base64decode(module.aks.kubernetes_client_certificate)
-  client_key                   = base64decode(module.aks.kubernetes_client_key)
-  cluster_ca_certificate       = base64decode(module.aks.kubernetes_cluster_ca_certificate)
+  host                         = var.deploy_aks ? module.aks.0.kubernetes_host : ""
+  client_certificate           = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_certificate) : ""
+  client_key                   = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_key) : ""
+  cluster_ca_certificate       = var.deploy_aks ? base64decode(module.aks.0.kubernetes_cluster_ca_certificate) : ""
 }

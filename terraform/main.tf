@@ -18,29 +18,21 @@ resource random_string suffix {
 }
 
 locals {
-# Making sure all character classes are represented, as random does not guarantee that  
-  password                     = ".Az9${random_string.password.result}"
-# suffix                       = random_string.suffix.result
-  suffix                       = var.resource_suffix != "" ? lower(var.resource_suffix) : random_string.suffix.result
-  environment                  = var.resource_environment != "" ? lower(var.resource_environment) : terraform.workspace
-  resource_group               = "${lower(var.resource_prefix)}-${lower(local.environment)}-${lower(local.suffix)}"
-
-  create_service_principal     = (var.aks_sp_application_id == "" || var.aks_sp_object_id == "" || var.aks_sp_application_secret == "") ? true : false
+  aks_name                     = "aks-${terraform.workspace}-${local.suffix}"
   # aks_sp_application_id        = local.create_service_principal ? module.service_principal.0.application_id : var.aks_sp_application_id
   # aks_sp_object_id             = local.create_service_principal ? module.service_principal.0.object_id : var.aks_sp_object_id
   # aks_sp_application_secret    = local.create_service_principal ? module.service_principal.0.secret : var.aks_sp_application_secret
   aks_sp_application_id        = var.aks_sp_application_id
   aks_sp_object_id             = var.aks_sp_object_id
   aks_sp_application_secret    = var.aks_sp_application_secret
+  create_service_principal     = (var.aks_sp_application_id == "" || var.aks_sp_object_id == "" || var.aks_sp_application_secret == "") ? true : false
+  kube_config_path             = var.kube_config_path != "" ? var.kube_config_path : format("../%s/.kube/config",path.module)
 
-  tags                         = map(
-      "application",             "Kubernetes",
-      "provisioner",             "terraform",
-      "environment",             terraform.workspace,
-      "shutdown",                "true",
-      "suffix",                  local.suffix,
-      "workspace",               terraform.workspace,
-  )
+# Making sure all character classes are represented, as random does not guarantee that  
+  password                     = ".Az9${random_string.password.result}"
+# suffix                       = random_string.suffix.result
+  suffix                       = var.resource_suffix != "" ? lower(var.resource_suffix) : random_string.suffix.result
+  environment                  = var.resource_environment != "" ? lower(var.resource_environment) : terraform.workspace
 }
 
 # Usage: https://www.terraform.io/docs/providers/azurerm/d/client_config.html
@@ -53,10 +45,17 @@ data http localpublicip {
 }
 
 resource azurerm_resource_group rg {
-  name                         = local.resource_group
+  name                         = "${lower(var.resource_prefix)}-${lower(local.environment)}-${lower(local.suffix)}"
   location                     = var.location
 
-  tags                         = local.tags
+  tags                         = map(
+    "application",               "Kubernetes",
+    "provisioner",               "terraform",
+    "environment",               local.environment,
+    "shutdown",                  "true",
+    "suffix",                    local.suffix,
+    "workspace",                 terraform.workspace,
+  )
 }
 
 # resource "azurerm_key_vault" "ttconfig" {
@@ -130,7 +129,7 @@ resource azurerm_container_registry acr {
   admin_enabled                = true
 # georeplication_locations     = ["East US", "West Europe"]
  
-  tags                         = local.tags
+  tags                         = azurerm_resource_group.rg.tags
 }
 
 resource azurerm_log_analytics_workspace log_analytics {
@@ -141,46 +140,62 @@ resource azurerm_log_analytics_workspace log_analytics {
   sku                          = "Standalone"
   retention_in_days            = 90 
   
-  tags                         = local.tags
+  tags                         = azurerm_resource_group.rg.tags
 }
 
-module aks {
-  source                       = "./modules/aks"
-  name                         = "aks-${terraform.workspace}-${local.suffix}"
-
-  sp_application_id            = local.aks_sp_application_id
-  sp_application_secret        = local.aks_sp_application_secret
-  sp_object_id                 = local.aks_sp_object_id
-  admin_username               = "aksadmin"
-  dns_prefix                   = "ew-aks"
-  log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
-  node_subnet_id               = module.network.subnet_ids["nodes"]
-  resource_group_name          = azurerm_resource_group.rg.name
-  ssh_public_key_file          = var.ssh_public_key_file
-}
-
-module k8s {
-  source                       = "./modules/kubernetes"
-
-  kubernetes_client_certificate= module.aks.kubernetes_client_certificate
-  kubernetes_client_key        = module.aks.kubernetes_client_key
-  kubernetes_cluster_ca_certificate= module.aks.kubernetes_cluster_ca_certificate
-  kubernetes_host              = module.aks.kubernetes_host
-
-  depends_on                   = [module.aks]
-}
-
+# Provision base network infrastructure
 module network {
   source                       = "./modules/network"
   resource_group_name          = azurerm_resource_group.rg.name
+  log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
   subnets                      = [
     "nodes"
   ]
 }
 
-# module service_principal {
-#   source                       = "./modules/app-registration"
-#   name                         = "aks-${terraform.workspace}-${local.suffix}"
+# Provision base Kubernetes infrastructure provided by Azure
+module aks {
+  source                       = "./modules/aks"
+  name                         = local.aks_name
 
-#   count                        = local.create_service_principal ? 1 : 0
-# }
+  admin_username               = "aksadmin"
+  dns_prefix                   = "ew-aks"
+  location                     = var.location
+  kube_config_path             = local.kube_config_path
+  log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
+  node_subnet_id               = module.network.subnet_ids["nodes"]
+  resource_group_name          = azurerm_resource_group.rg.name
+  sp_application_id            = local.aks_sp_application_id
+  sp_application_secret        = local.aks_sp_application_secret
+  sp_object_id                 = local.aks_sp_object_id
+  ssh_public_key_file          = var.ssh_public_key_file
+
+  count                        = var.deploy_aks ? 1 : 0
+  depends_on                   = [module.network]
+}
+
+# Provision AKS network infrastructure (allowing dependencies on AKS)
+module aks_network {
+  source                       = "./modules/aks-network"
+  resource_group_name          = azurerm_resource_group.rg.name
+
+  admin_ip_group_id            = module.network.admin_ip_group_id
+  aks_id                       = module.aks.0.aks_id
+  firewall_id                  = module.network.firewall_id
+  subnet_id                    = module.network.subnet_ids["nodes"]
+
+  count                        = var.deploy_aks ? 1 : 0
+}
+
+# Confugure Kubernetes
+module k8s {
+  source                       = "./modules/kubernetes"
+
+  kubernetes_client_certificate= module.aks.0.kubernetes_client_certificate
+  kubernetes_client_key        = module.aks.0.kubernetes_client_key
+  kubernetes_cluster_ca_certificate= module.aks.0.kubernetes_cluster_ca_certificate
+  kubernetes_host              = module.aks.0.kubernetes_host
+
+  count                        = var.deploy_aks && var.configure_kubernetes ? 1 : 0
+  depends_on                   = [module.aks,module.aks_network]
+}

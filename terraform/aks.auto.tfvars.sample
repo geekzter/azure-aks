@@ -1,6 +1,3 @@
 aks_sp_application_id          = "00000000-0000-0000-0000-000000000000"
 aks_sp_application_secret      = "AAAAAAAAAAAAAAAA"
 aks_sp_object_id               = "00000000-0000-0000-0000-000000000000"
-aks_sp_client_id               = "00000000-0000-0000-0000-000000000000"
-aks_sp_server_id               = "00000000-0000-0000-0000-000000000000"
-aks_sp_server_secret           = "AAAAAAAAAAAAAAAA"

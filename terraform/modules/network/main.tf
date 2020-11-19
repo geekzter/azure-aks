@@ -2,20 +2,74 @@ data azurerm_resource_group rg {
   name                         = var.resource_group_name
 }
 
-resource azurerm_virtual_network development_network {
+data http local_public_ip {
+# Get public IP address of the machine running this terraform template
+  url                          = "http://ipinfo.io/ip"
+}
+
+data http local_public_prefix {
+# Get public IP prefix of the machine running this terraform template
+  url                          = "https://stat.ripe.net/data/network-info/data.json?resource=${chomp(data.http.local_public_ip.body)}"
+}
+
+locals {
+  admin_cidrs                  = [
+                                  cidrsubnet("${chomp(data.http.local_public_ip.body)}/30",0,0), # /32 not allowed in network_rules
+                                  jsondecode(chomp(data.http.local_public_prefix.body)).data.prefix
+  ] 
+}
+
+resource azurerm_virtual_network network {
   name                         = "${data.azurerm_resource_group.rg.name}-network"
   location                     = data.azurerm_resource_group.rg.location
   resource_group_name          = data.azurerm_resource_group.rg.name
   address_space                = [var.address_space]
-
+  dns_servers                  = var.dns_servers
+  
   tags                         = data.azurerm_resource_group.rg.tags
+}
+
+resource azurerm_subnet iag_subnet {
+  name                        = "AzureFirewallSubnet"
+  virtual_network_name         = azurerm_virtual_network.network.name
+  resource_group_name          = data.azurerm_resource_group.rg.name
+  address_prefixes            = [cidrsubnet(azurerm_virtual_network.network.address_space[0],12,0)]
 }
 
 resource azurerm_subnet subnet {
   name                         = var.subnets[count.index]
-  virtual_network_name         = azurerm_virtual_network.development_network.name
+  virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = data.azurerm_resource_group.rg.name
-  address_prefixes             = [cidrsubnet(azurerm_virtual_network.development_network.address_space[0],var.subnet_size,count.index)]
+  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],var.subnet_bits,count.index+1)]
+
+  count                        = length(var.subnets)
+}
+
+resource azurerm_route_table user_defined_routes {
+  name                        = "${data.azurerm_resource_group.rg.name}-routes"
+  location                     = data.azurerm_resource_group.rg.location
+  resource_group_name          = data.azurerm_resource_group.rg.name
+
+  route {
+    name                       = "InternetViaFW"
+    address_prefix             = "0.0.0.0/0"
+    next_hop_type              = "VirtualAppliance"
+    next_hop_in_ip_address     = azurerm_firewall.iag.ip_configuration.0.private_ip_address
+  }
+
+  # AKS (in kubelet network mode) may add routes Terraform is not aware off
+  lifecycle {
+    ignore_changes             = [
+                                 route
+    ]
+  }  
+
+  tags                         = data.azurerm_resource_group.rg.tags
+}
+
+resource azurerm_subnet_route_table_association user_defined_routes {
+  subnet_id                    = azurerm_subnet.subnet[count.index].id
+  route_table_id               = azurerm_route_table.user_defined_routes.id
 
   count                        = length(var.subnets)
 }
