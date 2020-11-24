@@ -20,10 +20,6 @@ output kubernetes_host {
   value       = var.deploy_aks ? module.aks.0.kubernetes_host : null
 }
 
-# output kubernetes_api_server_ip_address {
-#   value       = var.deploy_aks ? module.aks.0.kubernetes_host : null
-# }
-
 output node_resource_group {
   value       = var.deploy_aks ? module.aks.0.node_resource_group : null
 }
