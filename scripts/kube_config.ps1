@@ -1,39 +1,15 @@
 #!/usr/bin/env pwsh
+. (Join-Path (Split-Path $MyInvocation.MyCommand.Path -Parent) functions.ps1)
 
-param(
-    [parameter(Mandatory=$false)][string]$workspace
-)
+Set-Environment
 
-New-Item -ItemType Directory -Force -Path ~/.kube > $null
-
-Push-Location (Join-Path (Get-Item (Split-Path -parent -Path $MyInvocation.MyCommand.Path)).Parent.FullName "Terraform")
-
-$currentWorkspace = $(terraform workspace list | Select-String -Pattern \* | %{$_ -Replace ".* ",""} 2> $null)
-
-try 
-{
-    if ($workspace)
-    {
-        terraform workspace select $workspace
-    }
-    terraform output kube_config > ~/.kube/config
-
-    #az aks get-credentials -n $(terraform output aks_name) -g $(terraform output resource_group) #--subscription $env:ARM_SUBSCRIPTION_ID
+try {
+    ChangeTo-TerraformDirectory
 
     kubectl config use-context $(terraform output aks_name)
-
+    kubectl config view
     kubectl cluster-info
     kubectl get nodes
-    Write-Output "Tiller pod(s):"
-    kubectl get pods --all-namespaces | Select-String -Pattern tiller
+} finally {
+    Pop-Location
 }
-finally
-{
-    # Ensure this always runs
-    if ($currentWorkspace)
-    {
-        terraform workspace select $currentWorkspace
-    }
-}
-
-Pop-Location

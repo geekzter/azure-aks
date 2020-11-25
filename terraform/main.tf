@@ -165,11 +165,12 @@ module aks {
   kube_config_path             = local.kube_config_path
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
   node_subnet_id               = module.network.subnet_ids["nodes"]
-  resource_group_name          = azurerm_resource_group.rg.name
+  resource_group_id            = azurerm_resource_group.rg.id
   sp_application_id            = local.aks_sp_application_id
   sp_application_secret        = local.aks_sp_application_secret
   sp_object_id                 = local.aks_sp_object_id
   ssh_public_key_file          = var.ssh_public_key_file
+  tags                         = azurerm_resource_group.rg.tags
 
   count                        = var.deploy_aks ? 1 : 0
   depends_on                   = [module.network]

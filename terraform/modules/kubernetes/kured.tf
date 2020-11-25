@@ -1,3 +1,9 @@
+# KUbernetes REboot Daemon
+# TODO: Use officlial Heml chart: 
+# https://docs.microsoft.com/en-us/azure/aks/node-updates-kured#deploy-kured-in-an-aks-cluster
+# https://weaveworks.github.io/kured
+
+# Re-used from
 # https://gist.github.com/ToruMakabe/46ac0b31f7f8a07fa9a1254f862bc15c
 resource kubernetes_cluster_role kured {
   metadata {

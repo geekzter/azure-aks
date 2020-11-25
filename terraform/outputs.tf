@@ -2,11 +2,6 @@ output aks_name {
   value       = var.deploy_aks ? local.aks_name : null
 }
 
-output client_certificate {
-  sensitive   = true
-  value       = var.deploy_aks ? module.aks.0.client_certificate : null
-}
-
 output firewall_fqdn {
   value       = module.network.firewall_fqdn
 }
@@ -14,6 +9,11 @@ output firewall_fqdn {
 output kube_config {
   sensitive   = true
   value       = var.deploy_aks ? module.aks.0.kube_config : null
+}
+
+output kubernetes_client_certificate {
+  sensitive   = true
+  value       = var.deploy_aks ? module.aks.0.kubernetes_client_certificate : null
 }
 
 output kubernetes_host {
