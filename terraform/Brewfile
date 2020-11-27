@@ -1,0 +1,3 @@
+brew "azure-cli"
+brew "kubernetes-cli"
+brew "kubernetes-helm"

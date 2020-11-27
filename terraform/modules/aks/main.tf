@@ -110,6 +110,7 @@ resource azurerm_kubernetes_cluster aks {
 
   network_profile {
     network_plugin             = "kubenet"
+    outbound_type              = "userDefinedRouting"
   }
 
   private_cluster_enabled      = true

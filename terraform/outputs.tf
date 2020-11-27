@@ -6,6 +6,10 @@ output firewall_fqdn {
   value       = module.network.firewall_fqdn
 }
 
+output internal_load_balancer_ip_address {
+  value       = var.deploy_aks ? module.aks_network.0.internal_load_balancer_ip_address : null
+}
+
 output kube_config {
   sensitive   = true
   value       = var.deploy_aks ? module.aks.0.kube_config : null
