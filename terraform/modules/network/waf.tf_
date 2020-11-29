@@ -1,0 +1,61 @@
+resource random_string waf_domain_name_label {
+  length                      = 16
+  upper                       = false
+  lower                       = true
+  number                      = false
+  special                     = false
+}
+
+resource azurerm_public_ip waf_pip {
+  name                         = "${data.azurerm_resource_group.rg.name}-waf-pip"
+  location                     = data.azurerm_resource_group.rg.location
+  resource_group_name          = data.azurerm_resource_group.rg.name
+  allocation_method            = "Static"
+  sku                          = "Standard" # Zone redundant
+  domain_name_label            = random_string.waf_domain_name_label.result
+
+  tags                         = data.azurerm_resource_group.rg.tags
+}
+
+resource azurerm_application_gateway waf {
+  name                         = "${data.azurerm_resource_group.rg.name}-waf"
+  location                     = data.azurerm_resource_group.rg.location
+  resource_group_name          = data.azurerm_resource_group.rg.name
+
+  sku {
+    # v2 SKU's are zone redundant
+    name                       = "WAF_v2"
+    tier                       = "WAF_v2"
+    capacity                   = 2
+  }
+  # Zone redundant
+  zones                        = ["1", "2", "3"]
+
+  gateway_ip_configuration {
+    name                       = "waf-ip-configuration"
+    subnet_id                  = azurerm_subnet.waf_subnet.id
+  }
+
+  # Applications
+  # frontend_ip_configuration {
+  #   name                       = local.waf_frontend_ip_config
+  #   public_ip_address_id       = azurerm_public_ip.waf_pip.id
+  # }
+  # frontend_port {
+  #   name                       = "http"
+  #   port                       = 80
+  # }
+  # frontend_port {
+  #   name                       = "https"
+  #   port                       = 443
+  # }
+
+  waf_configuration {
+    enabled                    = true
+    firewall_mode              = "Detection"
+    rule_set_type              = "OWASP"
+    rule_set_version           = "3.1"
+  }
+
+  tags                         = data.azurerm_resource_group.rg.tags
+}

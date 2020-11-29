@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-. (Join-Path (Split-Path $MyInvocation.MyCommand.Path -Parent) functions.ps1)
+. (Join-Path $PSScriptRoot functions.ps1)
 
 Set-Environment
 

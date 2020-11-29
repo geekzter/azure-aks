@@ -18,14 +18,6 @@
 #   }
 # }
 
-locals {
-    # Use the last ip address in the subnet as the load balancer address
-    # data.azurerm_subnet.nodes_subnet.address_prefixes[0]
-    # pow(2,32-split("/",data.azurerm_subnet.nodes_subnet.address_prefixes[0]))
-    load_balancer_ip_address   = cidrhost(data.azurerm_subnet.nodes_subnet.address_prefixes[0], pow(2,32-split("/",data.azurerm_subnet.nodes_subnet.address_prefixes[0])[1])-1)
-    # cidrhost("10.32.16.0/20", pow(2,32-split("/","10.32.16.0/20")[1])-1)
-}
-
 # Azure Internal Load Balancer
 resource kubernetes_service internal_load_balancer {
   metadata {
@@ -46,5 +38,26 @@ resource kubernetes_service internal_load_balancer {
     }
 
     type                       = "LoadBalancer"
+  }
+
+  depends_on                   = [
+    azurerm_private_dns_zone_virtual_network_link.api_server_domain
+  ]
+
+  count                        = var.peer_network_id != "" ? 1 : 0
+}
+
+locals {
+}
+
+# https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
+resource null_resource application_gateway_add_on {
+  provisioner local-exec { 
+    interpreter                = ["pwsh", "-nop", "-c"]
+    command                    = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
+    working_dir                = "../scripts"
+    # environment                = {
+    #   KUBECONFIG               = var.kube_config_path
+    # }
   }
 }

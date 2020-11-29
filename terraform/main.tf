@@ -33,6 +33,7 @@ locals {
 # suffix                       = random_string.suffix.result
   suffix                       = var.resource_suffix != "" ? lower(var.resource_suffix) : random_string.suffix.result
   environment                  = var.resource_environment != "" ? lower(var.resource_environment) : terraform.workspace
+  resource_group_name          = "${lower(var.resource_prefix)}-${lower(local.environment)}-${lower(local.suffix)}"
 }
 
 # Usage: https://www.terraform.io/docs/providers/azurerm/d/client_config.html
@@ -45,7 +46,7 @@ data http localpublicip {
 }
 
 resource azurerm_resource_group rg {
-  name                         = "${lower(var.resource_prefix)}-${lower(local.environment)}-${lower(local.suffix)}"
+  name                         = local.resource_group_name
   location                     = var.location
 
   tags                         = map(
@@ -179,15 +180,20 @@ module aks {
 # Provision AKS network infrastructure (allowing dependencies on AKS)
 module aks_network {
   source                       = "./modules/aks-network"
-  resource_group_name          = azurerm_resource_group.rg.name
+  resource_group_name          = local.resource_group_name
 
   admin_ip_group_id            = module.network.admin_ip_group_id
   aks_id                       = module.aks.0.aks_id
+  #application_gateway_id       = module.network.application_gateway_id
+  application_gateway_subnet_id= module.network.application_gateway_subnet_id
   firewall_id                  = module.network.firewall_id
+  location                     = var.location
+  nodes_subnet_id              = module.network.subnet_ids["nodes"]
   peer_network_id              = var.peer_network_id
-  subnet_id                    = module.network.subnet_ids["nodes"]
+  tags                         = azurerm_resource_group.rg.tags
 
   count                        = var.deploy_aks ? 1 : 0
+  depends_on                   = [module.aks,module.network]
 }
 
 # Confugure Kubernetes
