@@ -60,4 +60,6 @@ resource null_resource application_gateway_add_on {
     #   KUBECONFIG               = var.kube_config_path
     # }
   }
+
+  count                        = var.deploy_agic ? 1 : 0
 }

@@ -17,6 +17,12 @@ variable configure_kubernetes {
   description = "Whether to configure Kubernetes using the Terraform Kubernetes provider"
 }
 
+variable deploy_agic {
+  type        = bool
+  default     = false
+  description = "Whether to deploy AKS Application Gateway Ingress Controller Add On"
+}
+
 variable deploy_aks {
   type        = bool
   default     = true
