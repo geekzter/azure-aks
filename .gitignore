@@ -1,3 +1,6 @@
+# Local .kube directories
+**/.kube/*
+
 # Local .terraform directories
 **/.terraform/*
 
@@ -30,4 +33,8 @@ override.tf.json
 backend.tf
 
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
-# example: *tfplan*
+*.tfplan
+
+# Ignore temporary files
+~*.*
+tmp*.*
