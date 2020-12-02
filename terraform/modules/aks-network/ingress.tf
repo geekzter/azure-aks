@@ -52,6 +52,11 @@ locals {
 
 # https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
 resource null_resource application_gateway_add_on {
+  triggers = {
+    aks_id                     = data.azurerm_kubernetes_cluster.aks.id
+    always                     = timestamp()
+  }
+
   provisioner local-exec { 
     interpreter                = ["pwsh", "-nop", "-c"]
     command                    = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
