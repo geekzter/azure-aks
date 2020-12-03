@@ -11,7 +11,7 @@ resource azurerm_log_analytics_solution log_analytics_solution {
   solution_name                = "ContainerInsights" 
   location                     = var.location
   resource_group_name          = data.azurerm_log_analytics_workspace.log_analytics.resource_group_name
-  workspace_resource_id        = data.azurerm_log_analytics_workspace.log_analytics.id
+  workspace_resource_id        = var.log_analytics_workspace_id
   workspace_name               = data.azurerm_log_analytics_workspace.log_analytics.name
 
   plan {
@@ -42,12 +42,11 @@ resource azurerm_role_assignment spn_permission {
   principal_id                 = var.sp_object_id
 }
 
-data azurerm_client_config current {}
 # Grant Terraform user Cluster Admin role
 resource azurerm_role_assignment terraform_cluster_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Azure Kubernetes Service Cluster Admin Role"
-  principal_id                 = data.azurerm_client_config.current.object_id
+  principal_id                 = var.client_object_id
 }
 
 data azurerm_kubernetes_service_versions current {

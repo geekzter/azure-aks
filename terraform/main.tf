@@ -161,6 +161,7 @@ module aks {
   name                         = local.aks_name
 
   admin_username               = "aksadmin"
+  client_object_id             = data.azurerm_client_config.current.object_id
   dns_prefix                   = "ew-aks"
   location                     = var.location
   kube_config_path             = local.kube_config_path
