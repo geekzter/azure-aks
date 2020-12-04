@@ -36,3 +36,11 @@ while ($agicState -ine "Registered") {
 az provider register --namespace Microsoft.ContainerService
 Write-Host "Adding Application Gateway Ingress Controller Add On to '$AksName'..."
 az aks enable-addons -n $AksName -g $ResourceGroupName -a ingress-appgw --appgw-name $ApplicationGatewayName --appgw-subnet-id $ApplicationGatewaySubnetID --query addonProfiles
+
+
+# BUG: IP address data source not available in Terraform after completion
+$nodeResourceGroupName = $(az aks show -n $AksName -g $ResourceGroupName --query nodeResourceGroup -o tsv)
+az network application-gateway show -n $ApplicationGatewayName -g $nodeResourceGroupName -o table
+
+$applicationGatewayIpAddressName = "${ApplicationGatewayName}-appgwpip"
+az network public-ip show -n $applicationGatewayIpAddressName -g $nodeResourceGroupName -o table
