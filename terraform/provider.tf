@@ -1,6 +1,6 @@
 terraform {
   required_providers {
-    azuread                    = "~> 1.0.0"
+    azuread                    = "~> 1.1.1"
     azurerm                    = "~> 2.36"
     # dns                        = "~> 3.0.0"
     external                   = "~> 2.0.0"

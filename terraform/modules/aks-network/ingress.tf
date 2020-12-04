@@ -48,6 +48,7 @@ resource kubernetes_service internal_load_balancer {
 }
 
 locals {
+   application_gateway_name    = "${var.resource_group_name}-waf"
 }
 
 # https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
@@ -59,12 +60,21 @@ resource null_resource application_gateway_add_on {
 
   provisioner local-exec { 
     interpreter                = ["pwsh", "-nop", "-c"]
-    command                    = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
+    command                    = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ApplicationGatewayName ${local.application_gateway_name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
     working_dir                = "../scripts"
     # environment                = {
     #   KUBECONFIG               = var.kube_config_path
     # }
   }
+
+  count                        = var.deploy_agic ? 1 : 0
+}
+
+data azurerm_public_ip application_gateway_public_ip {
+  name                         = "${local.application_gateway_name}-appgwpip"
+  resource_group_name          = data.azurerm_kubernetes_cluster.aks.node_resource_group
+
+  depends_on                   = [null_resource.application_gateway_add_on]
 
   count                        = var.deploy_agic ? 1 : 0
 }

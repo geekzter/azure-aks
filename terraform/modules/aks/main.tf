@@ -68,7 +68,7 @@ resource azurerm_kubernetes_cluster aks {
       enabled                  = true
     }
     http_application_routing {
-      enabled                  = true
+      enabled                  = false # Use AGIC instead
     }
     kube_dashboard {
       enabled                  = true
@@ -82,7 +82,10 @@ resource azurerm_kubernetes_cluster aks {
 
   default_node_pool {
     availability_zones         = [1,2,3]
+    enable_auto_scaling        = true
     enable_node_public_ip      = false
+    min_count                  = 3
+    max_count                  = 10
     name                       = terraform.workspace
     node_count                 = 3
     tags                       = var.tags
@@ -108,7 +111,8 @@ resource azurerm_kubernetes_cluster aks {
   }
 
   network_profile {
-    network_plugin             = "kubenet"
+    network_plugin             = "azure"
+    network_policy             = "azure"
     outbound_type              = "userDefinedRouting"
   }
 
@@ -125,6 +129,12 @@ resource azurerm_kubernetes_cluster aks {
   service_principal {
     client_id                  = var.sp_application_id
     client_secret              = var.sp_application_secret
+  }
+
+  lifecycle {
+    ignore_changes             = [
+      default_node_pool.0.node_count # Ignore changes made by autoscaling
+    ]
   }
 
   tags                         = var.tags

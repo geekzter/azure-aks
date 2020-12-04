@@ -3,7 +3,8 @@ param (
     [parameter(Mandatory=$true)][string]$AksName,
     [parameter(Mandatory=$false)][string]$ApplicationGatewayName="${ResourceGroupName}-waf",
     [parameter(Mandatory=$true)][string]$ApplicationGatewaySubnetID,
-    [parameter(Mandatory=$true)][string]$ResourceGroupName
+    [parameter(Mandatory=$true)][string]$ResourceGroupName,
+    [parameter(Mandatory=$false)][switch]$RemoveIfExists
 )
 . (Join-Path $PSScriptRoot functions.ps1)
 
@@ -12,13 +13,17 @@ function Get-AGICState() {
 }
 
 Set-Environment
+az extension add --name aks-preview 2>&1
 
 if ($ApplicationGatewayName -ieq $(az aks show -n $AksName -g $ResourceGroupName --query "addonProfiles.ingressApplicationGateway.config.applicationGatewayName" -o tsv)) {
-    Write-Host "$ApplicationGatewayName is already configured as add on for $AksName"
-    exit    
+    if ($RemoveIfExists) {
+        Write-Host "Removing Application Gateway Ingress Controller Add On from '$AksName'..."
+        az aks disable-addons -n $AksName -g $ResourceGroupName -a ingress-appgw
+    } else {
+        Write-Host "$ApplicationGatewayName is already configured as add on for $AksName"
+        exit    
+    }
 }
-
-az extension add --name aks-preview 2>&1
 
 $agicState = Get-AGICState
 while ($agicState -ine "Registered") {
@@ -29,4 +34,5 @@ while ($agicState -ine "Registered") {
 } 
 
 az provider register --namespace Microsoft.ContainerService
-az aks enable-addons -n $AksName -g $ResourceGroupName -a ingress-appgw --appgw-name $ApplicationGatewayName --appgw-subnet-id $ApplicationGatewaySubnetID
+Write-Host "Adding Application Gateway Ingress Controller Add On to '$AksName'..."
+az aks enable-addons -n $AksName -g $ResourceGroupName -a ingress-appgw --appgw-name $ApplicationGatewayName --appgw-subnet-id $ApplicationGatewaySubnetID --query addonProfiles
