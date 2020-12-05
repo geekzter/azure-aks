@@ -8,20 +8,23 @@ function Get-LoadBalancerIPAddress(
     [parameter(Mandatory=$false)][int]$MaxTests=600    
 ) {
     $ilb = (kubectl get service azure-vote-front -o=jsonpath='{.status.loadBalancer}' | ConvertFrom-Json)
+    if (!$ilb) {
+        Write-Warning "Could not find ILB for service $KubernetesService"
+        exit
+    }
     $tests = 0
-    while ((!$ilb) -and ($tests -le $MaxTests)) {
+    while ((!$ilb.ingress.ip) -and ($tests -le $MaxTests)) {
         $tests++
         Start-Sleep 1
         $ilb = (kubectl get service azure-vote-front -o=jsonpath='{.status.loadBalancer}' | ConvertFrom-Json)
     }
-    if (!$ilb) {
+    if (!$ilb.ingress.ip) {
         Write-Warning "Could not obtain ILB external IP address for service $KubernetesService"
         exit
     }
 
-    $ilbIPAddress = $ilb.ingress.ip
-    Write-Verbose "Get-LoadBalancerIPAddress: $ilbIPAddress"
-    return $ilbIPAddress
+    Write-Verbose "Get-LoadBalancerIPAddress: $($ilb.ingress.ip)"
+    return $ilb.ingress.ip
 }
 
 function Get-TerraformDirectory() {

@@ -202,11 +202,6 @@ module aks_network {
 module k8s {
   source                       = "./modules/kubernetes"
 
-  kubernetes_client_certificate= module.aks.0.kubernetes_client_certificate
-  kubernetes_client_key        = module.aks.0.kubernetes_client_key
-  kubernetes_cluster_ca_certificate= module.aks.0.kubernetes_cluster_ca_certificate
-  kubernetes_host              = module.aks.0.kubernetes_host
-
   count                        = var.deploy_aks && var.configure_kubernetes ? 1 : 0
   depends_on                   = [module.aks,module.aks_network]
 }
