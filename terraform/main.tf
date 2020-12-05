@@ -19,12 +19,12 @@ resource random_string suffix {
 
 locals {
   aks_name                     = "aks-${terraform.workspace}-${local.suffix}"
-  # aks_sp_application_id        = local.create_service_principal ? module.service_principal.0.application_id : var.aks_sp_application_id
-  # aks_sp_object_id             = local.create_service_principal ? module.service_principal.0.object_id : var.aks_sp_object_id
-  # aks_sp_application_secret    = local.create_service_principal ? module.service_principal.0.secret : var.aks_sp_application_secret
-  aks_sp_application_id        = var.aks_sp_application_id
-  aks_sp_object_id             = var.aks_sp_object_id
-  aks_sp_application_secret    = var.aks_sp_application_secret
+  aks_sp_application_id        = local.create_service_principal ? module.service_principal.0.application_id : var.aks_sp_application_id
+  aks_sp_object_id             = local.create_service_principal ? module.service_principal.0.object_id : var.aks_sp_object_id
+  aks_sp_application_secret    = local.create_service_principal ? module.service_principal.0.secret : var.aks_sp_application_secret
+  # aks_sp_application_id        = var.aks_sp_application_id
+  # aks_sp_object_id             = var.aks_sp_object_id
+  # aks_sp_application_secret    = var.aks_sp_application_secret
   create_service_principal     = (var.aks_sp_application_id == "" || var.aks_sp_object_id == "" || var.aks_sp_application_secret == "") ? true : false
   kube_config_path             = var.kube_config_path != "" ? var.kube_config_path : format("../%s/.kube/config",path.module)
 
@@ -59,69 +59,6 @@ resource azurerm_resource_group rg {
   )
 }
 
-# resource "azurerm_key_vault" "ttconfig" {
-#   name                         = "${lower(var.resource_prefix)}config${local.suffix}"
-#   location                     = "${var.location}"
-#   resource_group_name          = "${azurerm_resource_group.rg.name}"
-#   enabled_for_disk_encryption  = true
-#   tenant_id                    = "${data.azurerm_client_config.current.tenant_id}"
-
-#   sku {
-#     name                       = "standard"
-#   }
-
-#   access_policy {
-#     tenant_id                  = "${data.azurerm_client_config.current.tenant_id}"
-#     object_id                  = "${data.azuread_service_principal.tfidentity.object_id}"
-
-#     certificate_permissions    = [
-#       "create",
-#       "delete",
-#       "get",
-#       "import",
-#     ]
-
-#     key_permissions            = [
-#       "delete",
-#       "get",
-#     ]
-
-#     secret_permissions         = [
-#       "delete",
-#       "get",
-#     ]
-#   }
-
-#   access_policy {
-#     tenant_id                  = "${data.azurerm_client_config.current.tenant_id}"
-# # Microsoft.Azure.WebSites RP SPN (appId: abfa0a7c-a6b6-4736-8310-5855508787cd, objectId: f8daea97-62e7-4026-becf-13c2ea98e8b4) requires access to Key Vault
-#     object_id                  = "f8daea97-62e7-4026-becf-13c2ea98e8b4"
-
-#     certificate_permissions    = [
-#       "get",
-#     ]
-
-#     key_permissions            = [
-#       "get",
-#     ]
-
-#     secret_permissions         = [
-#       "get",
-#     ]
-#   }
-
-#   network_acls {
-#     default_action             = "Deny"
-#     bypass                     = "AzureServices"
-#     ip_rules                   = [
-#       "${var.admin_ips}",
-#       "${chomp(data.http.localpublicip.body)}/32"
-#     ]
-#   }
-  
-#   tags                         = "${local.tags}"
-# }
-
 resource azurerm_container_registry acr {
   name                         = "${lower(var.resource_prefix)}reg${local.suffix}"
   resource_group_name          = azurerm_resource_group.rg.name
@@ -153,6 +90,14 @@ module network {
   subnets                      = [
     "nodes"
   ]
+}
+
+# Provision base network infrastructure
+module service_principal {
+  source                       = "./modules/service-principal"
+  name                         = "aks-${terraform.workspace}-${local.suffix}"
+
+  count                        = local.create_service_principal ? 1 : 0
 }
 
 # Provision base Kubernetes infrastructure provided by Azure

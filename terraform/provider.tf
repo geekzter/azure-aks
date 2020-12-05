@@ -2,7 +2,6 @@ terraform {
   required_providers {
     azuread                    = "~> 1.1.1"
     azurerm                    = "~> 2.36"
-    # dns                        = "~> 3.0.0"
     external                   = "~> 2.0.0"
     helm                       = "~> 1.3.2"
     http                       = "~> 2.0.0"
@@ -10,6 +9,7 @@ terraform {
     local                      = "~> 2.0.0"
     null                       = "~> 2.1"
     random                     = "~> 2.3"
+    time                       = "~> 0.6"
   }
   required_version             = "~> 0.13.0"
 }
