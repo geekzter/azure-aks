@@ -30,8 +30,8 @@ I won't go into detail of these modes, as the network mode is __irrelevant__ for
 
 If you're on macOS, you can run '`brew bundle`' in the repo root to get the required tools, as there is a `Brewfile`. 
 
-### Access
-Terraform will create a service principal, hence you will need the ability to create one in your AAD tenant. If you do not have that permission, you can use a pre-provisioned service principal instead and configure it using the following variables:
+### Permissions
+Terraform will create a service principal, hence you will need the ability to create one in your AAD tenant. If you do not have that permission, you can use a pre-provisioned service principal instead and configure it using the following Terraform variables:
 ```
 aks_sp_application_id
 aks_sp_application_secret
@@ -68,7 +68,7 @@ This script will output the url's used by the demo applications. One application
 
 Once deployed the applications will look like this:
 
-Voting App (ILB)  |ASP.NET App (AppGW)
+Internal Load Balancer: Voting App  |Application Gateway: ASP.NET App
 :----------------:|:-----------------:
 ![](votingapp.png)|![](aspnetapp.png)
 
@@ -76,3 +76,8 @@ Voting App (ILB)  |ASP.NET App (AppGW)
 ### Clean Up
 When you want to destroy resources, run:   
 `terraform destroy`
+
+
+## Resources
+- [Azure Kubernetes Service checklist](https://www.the-aks-checklist.com/)
+- [Azure Kubernetes Service production baseline](https://aka.ms/architecture/aks-baseline)
