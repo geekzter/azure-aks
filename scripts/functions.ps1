@@ -3,6 +3,18 @@ function ChangeTo-TerraformDirectory() {
     Push-Location (Get-TerraformDirectory)
 }
 
+function Get-Tools() {
+    if (!(Get-Command az -ErrorAction SilentlyContinue)) {
+        Write-Warning "Azure CLI not found"
+        exit
+    }
+    az extension add --name aks-preview 2>&1
+    if (!(Get-Command kubectl -ErrorAction SilentlyContinue)) {
+        Write-Information "kubectl not found, using Azure CLI to get it..."
+        az aks install-cli
+    }
+}
+
 function Get-LoadBalancerIPAddress(
     [parameter(Mandatory=$true)][string]$KubernetesService,
     [parameter(Mandatory=$false)][int]$MaxTests=600    

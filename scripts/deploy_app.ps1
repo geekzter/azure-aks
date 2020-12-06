@@ -4,6 +4,7 @@
 $manifestsDirectory = (Join-Path (Split-Path $PSScriptRoot -Parent) manifests)
 
 Set-Environment
+Get-Tools
 
 try {
     ChangeTo-TerraformDirectory
