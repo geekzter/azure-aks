@@ -3,13 +3,24 @@
 ## Description
 ![alt text](diagram.png "Network view")
 
+When you create an Azure Kubernetes Service (AKS) in the Azure Portal, or the azure CLI, by default it will be open in the sense of traffic (both application & management) using public IP addresses. This is a challenge in Enterprise, especially in regulated industries. Effort is needed to embed services in Virtual Networks, and in the case of AKS there are more moving parts than other Azure services.
+
 To constrain connectivity to/from an AKS cluster, the following available meassures are implemented:
 
-1. Remove the public endpoint of the AKS API Server ([article](https://docs.microsoft.com/en-us/azure/aks/private-clusters))
-1. Use an internal load balancer ([article](https://docs.microsoft.com/en-us/azure/aks/internal-lb))
-1. Use user defined routes and an Azure Firewall to manage egress ([article](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall))
-1. Use Application Gateway (AKS add on) to manage ingress traffic ([article](https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing))
+1. The Kubernetes API server is the entry point for Kubernetes management operations, and is hosted as a multi-tenant PaaS service by Microsoft. These kind of services can be projected in the Virtual Network using Private Link ([article](https://docs.microsoft.com/en-us/azure/aks/private-clusters))
+1. Instead of an external Load Balancer (with a public IP address), use an internal load balancer ([article](https://docs.microsoft.com/en-us/azure/aks/internal-lb))
+1. Use user defined routes and an Azure Firewall to manage egress, instead of breaking out to the Internet directly ([article](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall))
+1. Application Gateway can be used to manage ingress traffic. There are multiple ways to set this up, by far the simples is to use the AKS add on. This let's AKS create the Application Gateway and maintain it's configuration ([article](https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing))   
 
+Note 2. and 4. are overlapping, you typically use only one of both.
+
+### AKS Networking modes
+AKS supports 2 networking 'modes'. These modes control the IP address allocation of the agent nodes in the cluster. In short: 
+- [kubenet](https://docs.microsoft.com/en-us/azure/aks/configure-kubenet) creates IP addresses in different address space, and uses NAT to expose the agents. This is where the term 'external IP' comes from, this is a private IP address known to the rest of the network. 
+- [Azure CNI](https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni) uses the same address space for agents as the rest of the virtual network.
+See [comparison](https://docs.microsoft.com/en-us/azure/aks/concepts-network#compare-network-models)
+
+I won't go into detail of these modes, as the network mode is __irrelevant__ for the isolation meassures you need to take. Choosing one over the other does not make a major difference. This deployment has been tested with Azure CNI.
 
 ## Pre-requisites
 ### Tools
@@ -28,7 +39,7 @@ aks_sp_object_id
 ```
 
 ### Connectivity
-As this deploys an isolated AKS, how will you be able to access the AKS cluster once deployed? If you set the  `peer_network_id` variable to a network where you're running Terraform from (or you are connected to e.g. using VPN), this project will set up the peering and Private DNS connection required to look up the Kubernetes API Server and access cluster nodes. Without this you only perform partial deployment, set `configure_kubernetes` to `false` in this (disconnected) scenario.
+As this deploys an isolated AKS, how will you be able to access the AKS cluster once deployed? If you set the  `peer_network_id` variable to a network where you're running Terraform from (or you are connected to e.g. using VPN), this project will set up the peering and Private DNS link required to look up the Kubernetes API Server and access cluster nodes. Without this you can only perform partial deployment, you won't be able to deploy applications. Set `configure_kubernetes` to `false` in this (disconnected) scenario.
 
 ## Provisioning
 1. Clone repository:  
@@ -37,7 +48,7 @@ As this deploys an isolated AKS, how will you be able to access the AKS cluster 
 1. Change to the [`terraform`](./terraform) directrory  
 `cd azure-aks/terraform`
 
-1. Login into Azure with Azure CLI:  
+1. Login to Azure with Azure CLI:  
 `az login`   
 
 1. This also authenticates the Terraform [azuread](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/guides/azure_cli) and [azurerm](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/azure_cli) providers. Optionally, you can select the subscription to target:  
@@ -55,5 +66,13 @@ As this deploys an isolated AKS, how will you be able to access the AKS cluster 
 `scripts/deploy_app.ps1`
 This script will output the url's used by the demo applications. One application is exposed via Application Gateway and is publically accessible, the other over the internal Load Balancer.
 
-1. When you want to destroy resources, run:   
+Once deployed the applications will look like this:
+
+Voting App (ILB)  |ASP.NET App (AppGW)
+:----------------:|:-----------------:
+![](votingapp.png)|![](aspnetapp.png)
+
+
+### Clean Up
+When you want to destroy resources, run:   
 `terraform destroy`
