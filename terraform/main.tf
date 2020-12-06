@@ -126,7 +126,7 @@ module aks {
 # Provision AKS network infrastructure (allowing dependencies on AKS)
 module aks_network {
   source                       = "./modules/aks-network"
-  resource_group_name          = local.resource_group_name
+  resource_group_name          = azurerm_resource_group.rg.name
 
   admin_ip_group_id            = module.network.admin_ip_group_id
   aks_id                       = module.aks.0.aks_id
@@ -140,7 +140,7 @@ module aks_network {
   tags                         = azurerm_resource_group.rg.tags
 
   count                        = var.deploy_aks ? 1 : 0
-  depends_on                   = [module.aks,module.network]
+  #depends_on                   = [module.aks,module.network]
 }
 
 # Confugure Kubernetes

@@ -27,21 +27,20 @@ resource kubernetes_service internal_load_balancer {
     name                       = "azure-all-front"
   }
   spec {
-    #load_balancer_ip           = local.load_balancer_ip_address
     selector                   = {
       app                      = "azure-all-front"
     }
     session_affinity           = "ClientIP"
     port {
       port                     = 80
-      #target_port              = 80
     }
 
     type                       = "LoadBalancer"
   }
 
   depends_on                   = [
-    azurerm_private_dns_zone_virtual_network_link.api_server_domain
+    azurerm_private_dns_zone_virtual_network_link.api_server_domain,
+    data.azurerm_kubernetes_cluster.aks
   ]
 
   count                        = var.peer_network_id != "" ? 1 : 0
@@ -52,6 +51,7 @@ locals {
 }
 
 # https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
+# TODO: Use Terraform resource once supported: https://github.com/terraform-providers/terraform-provider-azurerm/issues/7384
 resource null_resource application_gateway_add_on {
   triggers = {
     aks_id                     = data.azurerm_kubernetes_cluster.aks.id
@@ -62,9 +62,6 @@ resource null_resource application_gateway_add_on {
     interpreter                = ["pwsh", "-nop", "-c"]
     command                    = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ApplicationGatewayName ${local.application_gateway_name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
     working_dir                = "../scripts"
-    # environment                = {
-    #   KUBECONFIG               = var.kube_config_path
-    # }
   }
 
   count                        = var.deploy_agic ? 1 : 0

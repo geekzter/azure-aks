@@ -71,6 +71,16 @@ resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
     ]
     protocols                  = ["TCP"]
   }
+
+  rule {
+    name                       = "AllowNTP"
+    source_ip_groups           = [azurerm_ip_group.nodes.id]
+    destination_ports          = ["123"]
+    destination_fqdns          = [
+      "pool.ntp.org",
+    ]
+    protocols                  = ["UDP"]
+  }
 }
 
 # https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#azure-global-required-fqdn--application-rules
@@ -222,10 +232,28 @@ resource azurerm_firewall_application_rule_collection aks_app_rules {
   }
 
   # https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall
+  # rule {
+  #   name                       = "Allow outbound AKS"
+
+  #   source_ip_groups           = [azurerm_ip_group.nodes.id]
+  #   fqdn_tags                  = ["AzureKubernetesService"]
+  # }
+
+  # Traffic required, but not documented
   rule {
-    name                       = "Allow outbound AKS"
+    name                       = "Allow misc container management traffic"
 
     source_ip_groups           = [azurerm_ip_group.nodes.id]
-    fqdn_tags                  = ["AzureKubernetesService"]
+    target_fqdns               = [
+      "production.cloudflare.docker.com",
+      "auth.docker.io",
+      "registry-1.docker.io",
+    ]
+
+    protocol {
+      port                     = "443"
+      type                     = "Https"
+    }
   }
+  
 } 
