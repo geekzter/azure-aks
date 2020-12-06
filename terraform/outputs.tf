@@ -6,6 +6,10 @@ output aks_name {
   value       = var.deploy_aks ? local.aks_name : null
 }
 
+output connectivity_message {
+  value       = var.peer_network_id == "" ? "No peering configured. You will NOT be able to deploy applications from this host." : null  
+}
+
 output firewall_fqdn {
   value       = module.network.firewall_fqdn
 }
