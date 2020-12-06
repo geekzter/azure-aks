@@ -1,5 +1,13 @@
+output application_gateway_public_ip {
+  value       = var.deploy_agic ? module.aks_network.0.application_gateway_public_ip : 0
+}
+
 output aks_name {
   value       = var.deploy_aks ? local.aks_name : null
+}
+
+output connectivity_message {
+  value       = var.peer_network_id == "" ? "No peering configured. You will NOT be able to deploy applications from this host." : null  
 }
 
 output firewall_fqdn {

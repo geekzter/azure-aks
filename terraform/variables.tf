@@ -19,7 +19,7 @@ variable configure_kubernetes {
 
 variable deploy_agic {
   type        = bool
-  default     = false
+  default     = true
   description = "Whether to deploy AKS Application Gateway Ingress Controller Add On"
 }
 

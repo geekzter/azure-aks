@@ -74,9 +74,11 @@ data azurerm_private_dns_zone api_server_domain {
 }
 resource azurerm_private_dns_zone_virtual_network_link api_server_domain {
   name                         = "${local.peer_network_name}-zone-link"
-  resource_group_name          = data.azurerm_private_dns_zone.api_server_domain.resource_group_name
+  resource_group_name          = data.azurerm_kubernetes_cluster.aks.node_resource_group
   private_dns_zone_name        = data.azurerm_private_dns_zone.api_server_domain.name
   virtual_network_id           = var.peer_network_id
+
+  tags                         = var.tags
 
   count                        = var.peer_network_id != "" ? 1 : 0
 }

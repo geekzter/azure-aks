@@ -1,5 +1,6 @@
-variable dns_prefix {}
 variable admin_username {}
+variable client_object_id {}
+variable dns_prefix {}
 variable kube_config_path {}
 variable location {}
 variable log_analytics_workspace_id {}

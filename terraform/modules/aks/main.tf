@@ -11,7 +11,7 @@ resource azurerm_log_analytics_solution log_analytics_solution {
   solution_name                = "ContainerInsights" 
   location                     = var.location
   resource_group_name          = data.azurerm_log_analytics_workspace.log_analytics.resource_group_name
-  workspace_resource_id        = data.azurerm_log_analytics_workspace.log_analytics.id
+  workspace_resource_id        = var.log_analytics_workspace_id
   workspace_name               = data.azurerm_log_analytics_workspace.log_analytics.name
 
   plan {
@@ -42,12 +42,11 @@ resource azurerm_role_assignment spn_permission {
   principal_id                 = var.sp_object_id
 }
 
-data azurerm_client_config current {}
 # Grant Terraform user Cluster Admin role
 resource azurerm_role_assignment terraform_cluster_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Azure Kubernetes Service Cluster Admin Role"
-  principal_id                 = data.azurerm_client_config.current.object_id
+  principal_id                 = var.client_object_id
 }
 
 data azurerm_kubernetes_service_versions current {
@@ -69,7 +68,7 @@ resource azurerm_kubernetes_cluster aks {
       enabled                  = true
     }
     http_application_routing {
-      enabled                  = true
+      enabled                  = false # Use AGIC instead
     }
     kube_dashboard {
       enabled                  = true
@@ -83,7 +82,10 @@ resource azurerm_kubernetes_cluster aks {
 
   default_node_pool {
     availability_zones         = [1,2,3]
+    enable_auto_scaling        = true
     enable_node_public_ip      = false
+    min_count                  = 3
+    max_count                  = 10
     name                       = terraform.workspace
     node_count                 = 3
     tags                       = var.tags
@@ -109,7 +111,8 @@ resource azurerm_kubernetes_cluster aks {
   }
 
   network_profile {
-    network_plugin             = "kubenet"
+    network_plugin             = "azure"
+    network_policy             = "azure"
     outbound_type              = "userDefinedRouting"
   }
 
@@ -126,6 +129,12 @@ resource azurerm_kubernetes_cluster aks {
   service_principal {
     client_id                  = var.sp_application_id
     client_secret              = var.sp_application_secret
+  }
+
+  lifecycle {
+    ignore_changes             = [
+      default_node_pool.0.node_count # Ignore changes made by autoscaling
+    ]
   }
 
   tags                         = var.tags
