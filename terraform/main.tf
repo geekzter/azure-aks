@@ -147,6 +147,6 @@ module aks_network {
 module k8s {
   source                       = "./modules/kubernetes"
 
-  count                        = var.deploy_aks && var.configure_kubernetes ? 1 : 0
+  count                        = var.deploy_aks && var.configure_kubernetes && var.peer_network_id != "" ? 1 : 0
   depends_on                   = [module.aks,module.aks_network]
 }
