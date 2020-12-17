@@ -140,7 +140,10 @@ module aks_network {
   tags                         = azurerm_resource_group.rg.tags
 
   count                        = var.deploy_aks ? 1 : 0
-  #depends_on                   = [module.aks,module.network]
+  depends_on                   = [
+    module.aks,
+    #module.network
+  ]
 }
 
 # Confugure Kubernetes
