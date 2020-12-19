@@ -101,9 +101,11 @@ resource azurerm_virtual_network_peering network_to_peer {
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
   allow_virtual_network_access = true
-  use_remote_gateways          = var.use_hub_gateway
+  use_remote_gateways          = var.peer_network_has_gateway
 
   count                        = var.peer_network_id == "" ? 0 : 1
+
+  depends_on                   = [azurerm_virtual_network_peering.peer_to_network]
 }
 
 resource azurerm_virtual_network_peering peer_to_network {
@@ -113,7 +115,7 @@ resource azurerm_virtual_network_peering peer_to_network {
   remote_virtual_network_id    = azurerm_virtual_network.network.id
 
   allow_forwarded_traffic      = true
-  allow_gateway_transit        = var.use_hub_gateway
+  allow_gateway_transit        = var.peer_network_has_gateway
   allow_virtual_network_access = true
   use_remote_gateways          = false
 

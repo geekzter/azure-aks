@@ -51,8 +51,9 @@ resource azurerm_resource_group rg {
 
   tags                         = map(
     "application",               "Kubernetes",
-    "provisioner",               "terraform",
     "environment",               local.environment,
+    "provisioner",               "terraform",
+    "repository",                basename(abspath("${path.root}/..")),
     "shutdown",                  "true",
     "suffix",                    local.suffix,
     "workspace",                 terraform.workspace,
@@ -86,6 +87,7 @@ module network {
   source                       = "./modules/network"
   resource_group_name          = azurerm_resource_group.rg.name
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
+  peer_network_has_gateway     = var.peer_network_has_gateway
   peer_network_id              = var.peer_network_id
   subnets                      = [
     "nodes"
