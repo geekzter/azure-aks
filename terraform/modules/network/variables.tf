@@ -7,14 +7,13 @@ variable dns_servers {
 }
 variable log_analytics_workspace_id {}
 variable peer_network_id {}
+variable peer_network_has_gateway {
+  type        = bool
+}
 variable resource_group_name {}
 variable subnet_bits {
   type    = number
   default = 8
-}
-variable use_hub_gateway {
-  type    = bool
-  default = false
 }
 variable subnets {
   type = list

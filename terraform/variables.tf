@@ -39,6 +39,11 @@ variable location {
   default     = "westeurope"
 }
 
+variable peer_network_has_gateway {
+  type        = bool
+  default     = false
+}
+
 variable peer_network_id {
   description = "Virtal network to be peered with. This is usefull to run Terraform from and be able to access a private API server."
   default     = ""
