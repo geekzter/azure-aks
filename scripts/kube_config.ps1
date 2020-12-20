@@ -6,7 +6,7 @@ Set-Environment
 try {
     ChangeTo-TerraformDirectory
 
-    kubectl config use-context $(terraform output aks_name)
+    kubectl config use-context (Get-TerraformOutput aks_name)
     kubectl config view
     kubectl cluster-info
     kubectl get nodes

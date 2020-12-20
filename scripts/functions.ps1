@@ -43,6 +43,25 @@ function Get-TerraformDirectory() {
     return (Join-Path (Split-Path -parent -Path $MyInvocation.PSScriptRoot) "Terraform")
 }
 
+function Get-TerraformOutput (
+    [parameter(Mandatory=$true)][string]$OutputVariable
+) {
+    Invoke-Command -ScriptBlock {
+        $Private:ErrorActionPreference    = "SilentlyContinue"
+        Write-Verbose "terraform output ${OutputVariable}: evaluating..."
+        $result = $(terraform output $OutputVariable 2>$null)
+        $result = (($result -replace '^"','') -replace '"$','') # Remove surrounding quotes (Terraform 0.14)
+        if ($result -match "\[\d+m") {
+            # Terraform warning, return null for missing output
+            Write-Verbose "terraform output ${OutputVariable}: `$null (${result})"
+            return $null
+        } else {
+            Write-Verbose "terraform output ${OutputVariable}: ${result}"
+            return $result
+        }
+    }
+}
+
 function Set-Environment() {
     $kubeConfig = (Join-Path (Split-Path -parent -Path $MyInvocation.PSScriptRoot) ".kube" "config")
 
@@ -56,7 +75,7 @@ function Set-Environment() {
 function Start-Agents () {
     ChangeTo-TerraformDirectory
 
-    $nodeResourceGroup = $(terraform output node_resource_group)
+    $nodeResourceGroup = (Get-TerraformOutput node_resource_group)
     if ($nodeResourceGroup) {
         $location = $(az group show -g $nodeResourceGroup --query location -o tsv)
         $vmssNames = $(az resource list -l $location -g $nodeResourceGroup --resource-type "Microsoft.Compute/virtualMachineScaleSets" --query "[].name" -o tsv)

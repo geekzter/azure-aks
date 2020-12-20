@@ -9,10 +9,10 @@ Get-Tools
 try {
     ChangeTo-TerraformDirectory
 
-    kubectl config use-context $(terraform output aks_name)
+    kubectl config use-context (Get-TerraformOutput aks_name)
 
     # ILB Demo: https://docs.microsoft.com/en-us/azure/aks/internal-lb
-    $ilbIPAddress = $(terraform output internal_load_balancer_ip_address)
+    $ilbIPAddress = (Get-TerraformOutput internal_load_balancer_ip_address)
     if ($ilbIPAddress) {
         Write-Host "`nDeploying Voting App..."
         kubectl apply -f (Join-Path $manifestsDirectory internal-vote.yaml)
@@ -21,7 +21,7 @@ try {
     }
 
     # AGIC Demo: https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing#deploy-a-sample-application-using-agic
-    $agicIPAddress = $(terraform output application_gateway_public_ip)
+    $agicIPAddress = (Get-TerraformOutput application_gateway_public_ip)
     if ($agicIPAddress) {
         Write-Host "`nDeploying ASP.NET App..."
         kubectl apply -f https://raw.githubusercontent.com/Azure/application-gateway-kubernetes-ingress/master/docs/examples/aspnetapp.yaml
