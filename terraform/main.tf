@@ -22,17 +22,14 @@ locals {
   aks_sp_application_id        = local.create_service_principal ? module.service_principal.0.application_id : var.aks_sp_application_id
   aks_sp_object_id             = local.create_service_principal ? module.service_principal.0.object_id : var.aks_sp_object_id
   aks_sp_application_secret    = local.create_service_principal ? module.service_principal.0.secret : var.aks_sp_application_secret
-  # aks_sp_application_id        = var.aks_sp_application_id
-  # aks_sp_object_id             = var.aks_sp_object_id
-  # aks_sp_application_secret    = var.aks_sp_application_secret
   create_service_principal     = (var.aks_sp_application_id == "" || var.aks_sp_object_id == "" || var.aks_sp_application_secret == "") ? true : false
-  kube_config_path             = var.kube_config_path != "" ? var.kube_config_path : format("../%s/.kube/config",path.module)
+  kube_config_path             = var.kube_config_path != "" ? var.kube_config_path : "${path.root}/../.kube/${local.workspace_moniker}config"
 
 # Making sure all character classes are represented, as random does not guarantee that  
   password                     = ".Az9${random_string.password.result}"
-# suffix                       = random_string.suffix.result
   suffix                       = var.resource_suffix != "" ? lower(var.resource_suffix) : random_string.suffix.result
   environment                  = var.resource_environment != "" ? lower(var.resource_environment) : terraform.workspace
+  workspace_moniker            = terraform.workspace == "default" ? "" : terraform.workspace
   resource_group_name          = "${lower(var.resource_prefix)}-${lower(local.environment)}-${lower(local.suffix)}"
 }
 
