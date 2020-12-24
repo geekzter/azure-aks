@@ -146,6 +146,11 @@ resource azurerm_kubernetes_cluster aks {
   ]
 }
 
+data azurerm_private_endpoint_connection api_server_endpoint {
+  name                         = "kube-apiserver"
+  resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
+}
+
 # Export kube_config for kubectl
 resource local_file kube_config {
   filename                     = var.kube_config_path

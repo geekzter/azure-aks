@@ -27,6 +27,10 @@ output kube_config_path {
   value       = abspath(local.kube_config_path)
 }
 
+output kubernetes_api_server_ip_address {
+  value       = var.deploy_aks ? module.aks.0.kubernetes_api_server_ip_address : null
+}
+
 output kubernetes_client_certificate {
   sensitive   = true
   value       = var.deploy_aks ? module.aks.0.kubernetes_client_certificate : null

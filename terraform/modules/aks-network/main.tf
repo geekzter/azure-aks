@@ -23,29 +23,9 @@ data azurerm_subnet nodes_subnet {
   resource_group_name          = element(split("/",var.nodes_subnet_id),length(split("/",var.nodes_subnet_id))-7)
 }
 
-# "az network private-dns record-set list -z 80e0f086-6949-4e86-ae85-185fc246d53d.privatelink.westeurope.azmk8s.io -g mc_k8s-default-qcmv_aks-default-qcmv_westeurope --query "[].aRecords[] | [0]" "
-data external image_info {
-  program                      = [
-                                 "az",
-                                 "network",
-                                 "private-dns",
-                                 "record-set",
-                                 "list",
-                                 "-g",
-                                 data.azurerm_kubernetes_cluster.aks.node_resource_group,
-                                 "-z",
-                                 local.api_server_domain,
-                                 "--query",
-                                 "[].aRecords[] | [0]",
-                                 "-o",
-                                 "json",
-                                 ]
-}
-
 locals {
   api_server_domain            = join(".",slice(split(".",local.api_server_host),1,length(split(".",local.api_server_host))))
   api_server_host              = regex("^(?:(?P<scheme>[^:/?#]+):)?(?://(?P<host>[^:/?#]*))?", data.azurerm_kubernetes_cluster.aks.kube_admin_config.0.host).host
-  kubernetes_api_ip_address    = data.external.image_info.result.ipv4Address
   peer_network_name            = element(split("/",var.peer_network_id),length(split("/",var.peer_network_id))-1)
 }
 
