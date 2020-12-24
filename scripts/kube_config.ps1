@@ -3,7 +3,7 @@
 
 try {
     ChangeTo-TerraformDirectory
-    Prepare-KubeConfig
+    Prepare-KubeConfig -Workspace $(terraform workspace show)
 
     kubectl config use-context (Get-TerraformOutput aks_name)
     kubectl config view

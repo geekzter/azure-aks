@@ -61,12 +61,15 @@ function Get-TerraformOutput (
     }
 }
 
-function Prepare-KubeConfig() {
+function Prepare-KubeConfig(
+    [parameter(Mandatory=$true)][string]$Workspace    
+) {
     $kubeConfig = (Get-TerraformOutput kube_config)
 
     if ($kubeConfig) {
         # Make sure the local file exists, terraform apply may have run on another host
-        $kubeConfigFile = (Get-TerraformOutput kube_config_path)
+        $kubeConfigMoniker = ($Workspace -eq "default") ? "" : $Workspace 
+        $kubeConfigFile = (Join-Path $PSScriptRoot ".." .kube "${kubeConfigMoniker}config")
         Set-Content -Path $kubeConfigFile -Value $kubeConfig 
         $env:KUBECONFIG = $kubeConfigFile
     } else {
