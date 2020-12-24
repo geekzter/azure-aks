@@ -6,6 +6,9 @@ output kube_config {
   value = azurerm_kubernetes_cluster.aks.kube_admin_config_raw
 }
 
+output kubernetes_api_server_ip_address {
+  value = data.azurerm_private_endpoint_connection.api_server_endpoint.private_service_connection.0.private_ip_address
+}
 output kubernetes_client_certificate {
   value = azurerm_kubernetes_cluster.aks.kube_admin_config.0.client_certificate
 }
