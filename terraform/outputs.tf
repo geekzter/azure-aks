@@ -23,6 +23,10 @@ output kube_config {
   value       = var.deploy_aks ? module.aks.0.kube_config : null
 }
 
+output kube_config_path {
+  value       = abspath(local.kube_config_path)
+}
+
 output kubernetes_client_certificate {
   sensitive   = true
   value       = var.deploy_aks ? module.aks.0.kubernetes_client_certificate : null

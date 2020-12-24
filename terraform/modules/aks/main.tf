@@ -100,15 +100,16 @@ resource azurerm_kubernetes_cluster aks {
   #   type                       = "SystemAssigned"
   # }
 
-  dynamic linux_profile {
-    for_each                   = range(fileexists(var.ssh_public_key_file) ? 1 : 0)
-    content {
-      admin_username           = var.admin_username
-      ssh_key {
-        key_data               = file(var.ssh_public_key_file)
-      }
-    }
-  }
+  # BUG: Triggers replacement of resource, forget about it for now
+  # dynamic linux_profile {
+  #   for_each                   = range(fileexists(var.ssh_public_key_file) ? 1 : 0)
+  #   content {
+  #     admin_username           = var.admin_username
+  #     ssh_key {
+  #       key_data               = file(var.ssh_public_key_file)
+  #     }
+  #   }
+  # }
 
   network_profile {
     network_plugin             = "azure"

@@ -1,10 +1,9 @@
 #!/usr/bin/env pwsh
 . (Join-Path $PSScriptRoot functions.ps1)
 
-Set-Environment
-
 try {
     ChangeTo-TerraformDirectory
+    Prepare-KubeConfig -Workspace $(terraform workspace show)
 
     kubectl config use-context (Get-TerraformOutput aks_name)
     kubectl config view
