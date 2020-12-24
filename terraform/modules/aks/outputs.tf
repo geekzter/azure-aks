@@ -3,7 +3,7 @@ output aks_id {
 }
 
 output kube_config {
-  value = azurerm_kubernetes_cluster.aks.kube_config_raw
+  value = azurerm_kubernetes_cluster.aks.kube_admin_config_raw
 }
 
 output kubernetes_client_certificate {

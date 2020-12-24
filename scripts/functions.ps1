@@ -49,8 +49,7 @@ function Get-TerraformOutput (
     Invoke-Command -ScriptBlock {
         $Private:ErrorActionPreference    = "SilentlyContinue"
         Write-Verbose "terraform output ${OutputVariable}: evaluating..."
-        $result = $(terraform output $OutputVariable 2>$null)
-        $result = (($result -replace '^"','') -replace '"$','') # Remove surrounding quotes (Terraform 0.14)
+        $result = $(terraform output -raw $OutputVariable 2>$null)
         if ($result -match "\[\d+m") {
             # Terraform warning, return null for missing output
             Write-Verbose "terraform output ${OutputVariable}: `$null (${result})"
@@ -62,13 +61,16 @@ function Get-TerraformOutput (
     }
 }
 
-function Set-Environment() {
-    $kubeConfig = (Join-Path (Split-Path -parent -Path $MyInvocation.PSScriptRoot) ".kube" "config")
+function Prepare-KubeConfig() {
+    $kubeConfig = (Get-TerraformOutput kube_config)
 
-    if (Test-Path $kubeConfig) {
-        $env:KUBECONFIG=$kubeConfig
+    if ($kubeConfig) {
+        # Make sure the local file exists, terraform apply may have run on another host
+        $kubeConfigFile = (Get-TerraformOutput kube_config_path)
+        Set-Content -Path $kubeConfigFile -Value $kubeConfig 
+        $env:KUBECONFIG = $kubeConfigFile
     } else {
-        Write-Warning "$kubeConfig not found"
+        Write-Warning "Terraform output variable kube_config not set"
     }
 }
 

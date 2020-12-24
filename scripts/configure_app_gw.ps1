@@ -24,7 +24,6 @@ function Wait-ApplicationGateway(
     az network public-ip show -n $applicationGatewayIpAddressName -g $nodeResourceGroupName -o table
 }
 
-Set-Environment
 az extension add --name aks-preview 2>&1
 
 if ($ApplicationGatewayName -ieq $(az aks show -n $AksName -g $ResourceGroupName --query "addonProfiles.ingressApplicationGateway.config.applicationGatewayName" -o tsv)) {

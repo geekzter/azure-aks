@@ -3,11 +3,11 @@
 . (Join-Path $PSScriptRoot functions.ps1)
 $manifestsDirectory = (Join-Path (Split-Path $PSScriptRoot -Parent) manifests)
 
-Set-Environment
 Get-Tools
 
 try {
     ChangeTo-TerraformDirectory
+    Prepare-KubeConfig
 
     kubectl config use-context (Get-TerraformOutput aks_name)
 
