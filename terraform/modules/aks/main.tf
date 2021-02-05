@@ -83,13 +83,15 @@ resource azurerm_kubernetes_cluster aks {
   default_node_pool {
     availability_zones         = [1,2,3]
     enable_auto_scaling        = true
+    enable_host_encryption     = false # Requires 'Microsoft.Compute/EncryptionAtHost' feature
     enable_node_public_ip      = false
     min_count                  = 3
     max_count                  = 10
-    name                       = terraform.workspace
+    name                       = "default"
     node_count                 = 3
     tags                       = var.tags
-    vm_size                    = "Standard_D2_v2"
+    # https://docs.microsoft.com/en-us/azure/virtual-machines/disk-encryption#supported-vm-sizes
+    vm_size                    = "Standard_D2s_v3"
     vnet_subnet_id             = var.node_subnet_id
   }
 
@@ -98,17 +100,6 @@ resource azurerm_kubernetes_cluster aks {
   # Using service_principal instead
   # identity {
   #   type                       = "SystemAssigned"
-  # }
-
-  # BUG: Triggers replacement of resource, forget about it for now
-  # dynamic linux_profile {
-  #   for_each                   = range(fileexists(var.ssh_public_key_file) ? 1 : 0)
-  #   content {
-  #     admin_username           = var.admin_username
-  #     ssh_key {
-  #       key_data               = file(var.ssh_public_key_file)
-  #     }
-  #   }
   # }
 
   network_profile {
