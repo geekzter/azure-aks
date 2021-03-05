@@ -1,15 +1,15 @@
 terraform {
   required_providers {
-    azuread                    = "~> 1.3"
-    azurerm                    = "~> 2.46"
-    external                   = "~> 2.0.0"
-    helm                       = "~> 1.3.2"
-    http                       = "~> 2.0.0"
-    kubernetes                 = "~> 1.13.3"
-    local                      = "~> 2.0.0"
+    azuread                    = "~> 1.4"
+    azurerm                    = "~> 2.50"
+    external                   = "~> 2.0"
+    helm                       = "~> 1.3"
+    http                       = "~> 2.1"
+    kubernetes                 = "~> 1.13"
+    local                      = "~> 2.1"
     null                       = "~> 2.1"
-    random                     = "~> 2.3"
-    time                       = "~> 0.6"
+    random                     = "~> 3.1"
+    time                       = "~> 0.7"
   }
   required_version             = "~> 0.14.0"
 }
