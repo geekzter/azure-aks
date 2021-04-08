@@ -3,7 +3,7 @@
 This repo lets you provision a network isolated Azure Kubernetes Service, customizing egress, ingress with both Internal Load Balancer and Application Gateway, and the Kubernetes API Server (AKS management nodes) connected via Private Link. It uses Terraform as that can create all the Azure AD, Azure and Kubernetes resources required.
  
 ## Description
-![alt text](diagram.png "Network view")
+![alt text](visuals/diagram.png "Network view")
 
 When you create an Azure Kubernetes Service (AKS) in the Azure Portal, or with the Azure CLI, by default it will be open in the sense of traffic (both application & management) using public IP addresses. This is a challenge in Enterprise, especially in regulated industries. Effort is needed to embed services in Virtual Networks, and in the case of AKS there are quite a few moving parts to consider.
 
@@ -72,7 +72,7 @@ Once deployed the applications will look like this:
 
 Internal Load Balancer: Voting App  |Application Gateway: ASP.NET App
 :----------------:|:-----------------:
-![](votingapp.png)|![](aspnetapp.png)
+![](visuals/votingapp.png)|![](visuals/aspnetapp.png)
 
 
 ### Clean Up
