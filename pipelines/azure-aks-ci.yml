@@ -4,37 +4,6 @@
 #  - Test application
 #  - Destroy infrastructure
 parameters:
-- name: name
-  displayName: Stage Name
-  type: string
-- name: displayName
-  displayName: Stage Display Name
-  type: string
-- name: inherit
-  displayName: Inherit state
-  type: boolean
-  default: false
-- name: provision
-  displayName: Provision infrastructure
-  type: boolean
-  default: true
-- name: reprovision
-  displayName: Provision infrastructure
-  type: boolean
-  default: true
-- name: deploy
-  displayName: Deploy applications
-  type: boolean
-  default: true
-- name: destroy
-  displayName: Destroy infrastructure
-  type: string
-  default: Always
-  values:
-  - Always
-  - Never 
-  - 'On failure'
-  - 'On success'
 - name: workspace
   displayName: Pipeline Environment / Terraform Workspace
   type: string
@@ -44,109 +13,42 @@ parameters:
   - ci1
   - ci2
   - ci3
-  - cd1
-  - cd2
-  - cd3
-  - rel
-  - rel1
-  - rel2
-  - rel3
-  - test
-  - tst1
-  - tst2
-  - tst3
-- name: deploymentName
-  displayName: Deployment name (middle part resource names)
-  type: string
-  default: ''
-- name: resourceSuffix
-  displayName: Deployment name (middle part resource names)
-  type: string
-  default: ''
-- name: unpinTerraform
-  displayName: Unpin Terraform version
-  type: boolean
-  default: false
-- name: unpinTerraformProviders
-  displayName: Unpin Terraform provider versions
-  type: boolean
-  default: false
-- name: infraArtifactPipeline
-  displayName: Pipeline (alias) for artifacts
-  type: string
-  default: ''
-- name: testMode
-  displayName: Test Mode (disable most tasks)
-  type: boolean
-  default: false
 
-stages:
-- stage: ${{ parameters.name }}
-  displayName: ${{ parameters.displayName }}
+jobs:
+- job: 'Provision'
+  displayName: 'Provision'
+  condition: succeeded()
+  timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
 
-  # Global variables shared by all jobs
-  variables:
-  - group: 'aks-ci'
-  - group: 'pipeline'
+  pool:
+    name: '$(pool)'
+    vmImage: $(vmImage)
 
-  - name: 'jobTimeOutMinutes'
-    value: 180
-  - name: 'repository'
-    value: 'azkre-aks'
+  workspace:
+    clean: all
 
-  - name: 'TF_IN_AUTOMATION'
-    value: 'true'
-  - name: 'TF_INPUT'
-    value: 0
-  - name: 'TF_WORKSPACE'
-    value: ${{ parameters.workspace }}
-  - name: 'scriptDirectory'
-    value: '$(Build.SourcesDirectory)/scripts'
-  - name: 'terraformDirectory'
-    value: '$(Build.SourcesDirectory)/terraform'
-  - name: 'TF_VAR_resource_suffix'
-    value: 'b$(Build.BuildId)'
-  - name: 'TF_VAR_run_id'
-    value: '$(Build.BuildId)'
+  steps:
+    - pwsh: |
+        Write-Host "Script Directory: $(scriptDirectory)"
+        Write-Host "Workspace Contents:"
+        Get-ChildItem $(Pipeline.Workspace) -Recurse
+        Write-Host "Environment:"
+        Get-ChildItem -Path Env:* | Sort-Object -Property Name
+      displayName: 'Test task'
+      enabled: ${{ parameters.testMode }}
+    - task: AzureCLI@2
+      displayName: 'Gather Terraform settings'
+      name: terraformConfig
+      inputs:
+        azureSubscription: '$(subscriptionConnection)'
+        scriptType: pscore
+        scriptLocation: inlineScript
+        inlineScript: |
+          # List environment variables
+          Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
 
-  - name: 'resourceGroup' 
-    value: 'synapse-network-$(TF_VAR_resource_suffix)'
-
-  jobs:
-  - job: 'Provision'
-    displayName: 'Provision'
-    condition: succeeded()
-    timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
-
-    pool:
-      name: '$(pool)'
-      vmImage: $(vmImage)
-
-    workspace:
-      clean: all
-
-    steps:
-      - pwsh: |
-          Write-Host "Script Directory: $(scriptDirectory)"
-          Write-Host "Workspace Contents:"
-          Get-ChildItem $(Pipeline.Workspace) -Recurse
-          Write-Host "Environment:"
-          Get-ChildItem -Path Env:* | Sort-Object -Property Name
-        displayName: 'Test task'
-        enabled: ${{ parameters.testMode }}
-      - task: AzureCLI@2
-        displayName: 'Gather Terraform settings'
-        name: terraformConfig
-        inputs:
-          azureSubscription: '$(subscriptionConnection)'
-          scriptType: pscore
-          scriptLocation: inlineScript
-          inlineScript: |
-            # List environment variables
-            Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
-
-            $terraformVersion = (Get-Content .terraform-version)
-            Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"
-          useGlobalConfig: true
-          failOnStandardError: true
-          workingDirectory: '$(terraformDirectory)'
+          $terraformVersion = (Get-Content .terraform-version)
+          Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"
+        useGlobalConfig: true
+        failOnStandardError: true
+        workingDirectory: '$(terraformDirectory)'
