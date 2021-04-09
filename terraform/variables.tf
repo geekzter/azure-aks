@@ -51,7 +51,7 @@ variable peer_network_id {
 
 variable resource_prefix {
   description = "The prefix to put in front of resource names created"
-  default     = "K8S"
+  default     = "k8s"
 }
 variable resource_suffix {
   description = "The suffix to put at the of resource names created"

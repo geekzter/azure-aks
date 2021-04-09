@@ -113,15 +113,15 @@ jobs:
           $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
           $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)              
           
-          # Convert uppercased Terraform environment variables to their original casing expeted by Terraform
-          foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
-            $upperCaseName = $tfvar.Name + "_UC"
-            $properCaseName = $tfvar.Name.Substring(0,7) + $tfvar.Name.Substring(7).ToLowerInvariant()
-            $null = New-Item -Path env:$upperCaseName -Value $tfVar.Value
-            Remove-Item -Path env:$($tfvar.Name)
-            $null = New-Item -Path env:$properCaseName -Value $tfVar.Value
-            Set-Item -Path env:$upperCaseName -Value $null
-          } 
+          # # Convert uppercased Terraform environment variables to their original casing expeted by Terraform
+          # foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
+          #   $upperCaseName = $tfvar.Name + "_UC"
+          #   $properCaseName = $tfvar.Name.Substring(0,7) + $tfvar.Name.Substring(7).ToLowerInvariant()
+          #   $null = New-Item -Path env:$upperCaseName -Value $tfVar.Value
+          #   Remove-Item -Path env:$($tfvar.Name)
+          #   $null = New-Item -Path env:$properCaseName -Value $tfVar.Value
+          #   Set-Item -Path env:$upperCaseName -Value $null
+          # } 
           # List environment variables
           Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
           Copy-Item backend.tf.sample backend.tf
