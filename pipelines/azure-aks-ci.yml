@@ -165,7 +165,7 @@ jobs:
           # Get from Azure CLI context
           $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
           $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)
-          Copy-Item backend.tf.example backend.tf
+          Copy-Item backend.tf.sample backend.tf
           terraform version
           terraform init -reconfigure `
                          -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP_NAME)" `
