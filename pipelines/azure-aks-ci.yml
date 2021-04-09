@@ -14,6 +14,27 @@ parameters:
   - ci2
   - ci3
 
+trigger: none
+
+pr:
+  branches:
+    include:
+    - '*'
+  paths:
+    exclude:
+    - '.devcontainer/**'  
+    - 'visuals/**'  
+    - '*.md'  
+
+schedules:
+- cron: '0 1 * * *'
+  displayName: 'Nightly build (UTC)'
+  # Run if there are no changes
+  always: 'true'
+  branches:
+    include:
+    - main
+
 variables:
 - group: 'aks-ci'
 - group: 'pipeline'
@@ -83,7 +104,7 @@ jobs:
     - task: TerraformInstaller@0
       displayName: 'Use preferred Terraform version'
       inputs:
-        terraformVersion: $[ outputs['terraformConfig.version'] ]     
+        terraformVersion: $(terraformVersion) 
 
     - task: AzureCLI@2
       displayName: 'Terraform init'
