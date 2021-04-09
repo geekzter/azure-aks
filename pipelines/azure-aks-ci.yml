@@ -35,7 +35,6 @@ jobs:
         Write-Host "Environment:"
         Get-ChildItem -Path Env:* | Sort-Object -Property Name
       displayName: 'Test task'
-      enabled: ${{ parameters.testMode }}
     - task: AzureCLI@2
       displayName: 'Gather Terraform settings'
       name: terraformConfig
