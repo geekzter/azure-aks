@@ -99,12 +99,12 @@ jobs:
           Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"
         useGlobalConfig: true
         failOnStandardError: true
-        workingDirectory: '$(terraformConfig.version)'
+        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformInstaller@0
       displayName: 'Use preferred Terraform version'
       inputs:
-        terraformVersion: $(terraformVersion) 
+        terraformVersion: '$(terraformConfig.version)'
 
     - task: AzureCLI@2
       displayName: 'Terraform init'
