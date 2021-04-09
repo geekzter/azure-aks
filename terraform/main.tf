@@ -51,6 +51,7 @@ resource azurerm_resource_group rg {
     "environment",               local.environment,
     "provisioner",               "terraform",
     "repository",                basename(abspath("${path.root}/..")),
+    "runid",                     var.run_id,
     "shutdown",                  "true",
     "suffix",                    local.suffix,
     "workspace",                 terraform.workspace,

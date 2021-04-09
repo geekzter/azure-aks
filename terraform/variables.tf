@@ -63,6 +63,11 @@ variable resource_environment {
   default     = "" # Empty string defaults to workspace name
 }
 
+variable run_id {
+  description = "The ID that identifies the pipeline / workflow that invoked Terraform"
+  default     = ""
+}
+
 variable ssh_public_key_file {
   type         = string
   default      = "~/.ssh/id_rsa.pub"
