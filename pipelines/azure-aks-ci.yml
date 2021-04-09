@@ -14,6 +14,33 @@ parameters:
   - ci2
   - ci3
 
+variables:
+- group: 'aks-ci'
+- group: 'pipeline'
+
+- name: 'jobTimeOutMinutes'
+  value: 180
+- name: 'repository'
+  value: 'azkre-aks'
+
+- name: 'TF_IN_AUTOMATION'
+  value: 'true'
+- name: 'TF_INPUT'
+  value: 0
+- name: 'TF_WORKSPACE'
+  value: ${{ parameters.workspace }}
+- name: 'scriptDirectory'
+  value: '$(Build.SourcesDirectory)/scripts'
+- name: 'terraformDirectory'
+  value: '$(Build.SourcesDirectory)/terraform'
+- name: 'TF_VAR_resource_suffix'
+  value: 'b$(Build.BuildId)'
+- name: 'TF_VAR_run_id'
+  value: '$(Build.BuildId)'
+
+- name: 'resourceGroup' 
+  value: 'k8s-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
+
 jobs:
 - job: 'Provision'
   displayName: 'Provision'
