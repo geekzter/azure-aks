@@ -143,7 +143,7 @@ jobs:
 
     - task: AzureCLI@2
       name: teardown
-      displayName: 'Tear down remaining resources & Clear Terraform workspace'
+      displayName: 'Tear down remaining resources'
       condition: always()
       inputs:
         azureSubscription: '$(subscriptionConnection)'
@@ -154,8 +154,21 @@ jobs:
           # Build JMESPath expression
           $tagQuery = "[?tags.repository == '$(repository)' && tags.workspace == '${env:TF_WORKSPACE}' && tags.runid == '$(Build.BuildId)' && properties.provisioningState != 'Deleting'].id"
           Write-Host "Removing resource group identified by `"$tagQuery`"..."
+
+          # Remove resource groups
+          $resourceGroupIDs = $(az group list --query "${tagQuery}" -o tsv)
+          if ($resourceGroupIDs) {
+            Write-Host "Removing resource group(s) `"${resourceGroupIDs}`"..."
+            &{ # az writes information to stderr
+              $ErrorActionPreference = 'SilentlyContinue'
+              az resource delete --ids $resourceGroupIDs 2>&1
+            }
+          } else {
+            Write-Host "No resource groups to remove"
+          }
+
+          # Remove (remaining) resources
           $resourceIDs = $(az resource list --query "${tagQuery}" -o tsv)
-          # Remove resources
           if ($resourceIDs) {
             Write-Host "Removing resources `"${resourceIDs}`"..."
             &{ # az writes information to stderr
@@ -163,9 +176,23 @@ jobs:
               az resource delete --ids $resourceIDs 2>&1
             }
           } else {
-            Write-Host "Nothing to remove"
+            Write-Host "No resources to remove"
           }
+        useGlobalConfig: true
+        failOnStandardError: true
+        workingDirectory: '$(scriptDirectory)'
 
+
+    - task: AzureCLI@2
+      name: clear
+      displayName: 'Clear Terraform workspace'
+      condition: always()
+      inputs:
+        azureSubscription: '$(subscriptionConnection)'
+        scriptType: pscore
+        scriptLocation: inlineScript
+        inlineScript: |
+          $ErrorActionPreference = "Continue"
           # Clean up Terraform state
           # Propagate pipeline Service Principal as Terraform variables
           $env:ARM_CLIENT_ID       ??= $env:servicePrincipalId
