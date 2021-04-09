@@ -76,14 +76,6 @@ jobs:
     clean: all
 
   steps:
-    - pwsh: |
-        Write-Host "Script Directory: $(scriptDirectory)"
-        Write-Host "Workspace Contents:"
-        Get-ChildItem $(Pipeline.Workspace) -Recurse
-        Write-Host "Environment:"
-        Get-ChildItem -Path Env:* | Sort-Object -Property Name
-      displayName: 'Test task'
-
     - task: AzureCLI@2
       displayName: 'Gather Terraform settings'
       name: terraformConfig
@@ -107,7 +99,7 @@ jobs:
         terraformVersion: '$(terraformConfig.version)'
 
     - task: AzureCLI@2
-      displayName: 'Terraform init'
+      displayName: 'Terraform plan'
       inputs:
         azureSubscription: '$(subscriptionConnection)'
         scriptType: pscore
@@ -132,8 +124,65 @@ jobs:
                          -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT_NAME)" `
                          -backend-config="container_name=$(TF_STATE_CONTAINER_NAME)" 
           terraform plan
+          terraform destroy -auto-approve
         addSpnToEnvironment: true
         useGlobalConfig: true
         failOnStandardError: true
         powerShellIgnoreLASTEXITCODE: false
         workingDirectory: '$(terraformDirectory)'
+
+
+    - task: AzureCLI@2
+      name: teardown
+      displayName: 'Tear down remaining resources & Clear Terraform workspace'
+      condition: allways()
+      inputs:
+        azureSubscription: '$(subscriptionConnection)'
+        scriptType: pscore
+        scriptLocation: inlineScript
+        inlineScript: |
+          $ErrorActionPreference = "Continue"
+          # Build JMESPath expression
+          $tagQuery = "[?tags.repository == '$(repository)' && tags.workspace == '${env:TF_WORKSPACE}' && tags.runid == '$(Build.BuildId)' && properties.provisioningState != 'Deleting'].id"
+          Write-Host "Removing resource group identified by `"$tagQuery`"..."
+          $resourceIDs = $(az resource list --query "${tagQuery}" -o tsv)
+          # Remove resources
+          if ($resourceIDs) {
+            Write-Host "Removing resources `"${resourceIDs}`"..."
+            &{ # az writes information to stderr
+              $ErrorActionPreference = 'SilentlyContinue'
+              az resource delete --ids $resourceIDs 2>&1
+            }
+          } else {
+            Write-Host "Nothing to remove"
+          }
+
+          # Clean up Terraform state
+          # Propagate pipeline Service Principal as Terraform variables
+          $env:ARM_CLIENT_ID       ??= $env:servicePrincipalId
+          $env:ARM_CLIENT_SECRET   ??= $env:servicePrincipalKey
+          $env:ARM_TENANT_ID       ??= $env:tenantId
+          # Get from Azure CLI context
+          $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
+          $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)
+          Copy-Item backend.tf.example backend.tf
+          terraform version
+          terraform init -reconfigure `
+                         -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP_NAME)" `
+                         -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT_NAME)" `
+                         -backend-config="container_name=$(TF_STATE_CONTAINER_NAME)" 
+          $terraformState = (terraform state pull | ConvertFrom-Json)
+          if ($terraformState.resources) {
+            Write-Host "Clearing Terraform state in workspace ${env:TF_WORKSPACE}..."
+            $terraformState.outputs = New-Object PSObject # Empty output
+            $terraformState.resources = @() # No resources
+            $terraformState.serial++
+            $terraformState | ConvertTo-Json | terraform state push -
+          } else {
+            Write-Host "No resources in Terraform state in workspace ${env:TF_WORKSPACE}..."
+          }
+          terraform state pull 
+        addSpnToEnvironment: true
+        useGlobalConfig: true
+        failOnStandardError: true
+        workingDirectory: '$(terraformDirectory)'        
