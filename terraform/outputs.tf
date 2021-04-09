@@ -40,6 +40,10 @@ output kubernetes_host {
   value       = var.deploy_aks ? module.aks.0.kubernetes_host : null
 }
 
+output peered_network {
+  value       = var.peer_network_id != "" ? true : false
+}
+
 output node_resource_group {
   value       = var.deploy_aks ? module.aks.0.node_resource_group : null
 }

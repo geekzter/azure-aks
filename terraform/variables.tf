@@ -13,7 +13,7 @@ variable aks_sp_application_secret {
 
 variable configure_kubernetes {
   type        = bool
-  default     = true
+  default     = false
   description = "Whether to configure Kubernetes using the Terraform Kubernetes provider"
 }
 

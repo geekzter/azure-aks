@@ -30,16 +30,16 @@ data azurerm_subnet nodes_subnet {
 resource azurerm_role_assignment spn_network_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Network Contributor"
-  # principal_id                 = azurerm_kubernetes_cluster.aks.identity[0].principal_id
-  principal_id                 = var.sp_object_id
+  principal_id                 = azurerm_kubernetes_cluster.aks.identity[0].principal_id
+  # principal_id                 = var.sp_object_id
 }
 
 # Requires Terraform owner access to resource group, in order to be able to perform access management
 resource azurerm_role_assignment spn_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Virtual Machine Contributor"
-  # principal_id                 = azurerm_kubernetes_cluster.aks.identity[0].principal_id
-  principal_id                 = var.sp_object_id
+  principal_id                 = azurerm_kubernetes_cluster.aks.identity[0].principal_id
+  # principal_id                 = var.sp_object_id
 }
 
 # Grant Terraform user Cluster Admin role
@@ -95,12 +95,9 @@ resource azurerm_kubernetes_cluster aks {
     vnet_subnet_id             = var.node_subnet_id
   }
 
-  # Clusters using managed identity do not support bringing your own route table. 
-  # Please see https://aka.ms/aks/customrt for more information
-  # Using service_principal instead
-  # identity {
-  #   type                       = "SystemAssigned"
-  # }
+  identity {
+    type                       = "SystemAssigned"
+  }
 
   network_profile {
     network_plugin             = "azure"
@@ -118,10 +115,13 @@ resource azurerm_kubernetes_cluster aks {
     enabled                    = true
   }
 
-  service_principal {
-    client_id                  = var.sp_application_id
-    client_secret              = var.sp_application_secret
-  }
+  # Clusters using managed identity do not support bringing your own route table. 
+  # Please see https://aka.ms/aks/customrt for more information
+  # Using service_principal instead
+  # service_principal {
+  #   client_id                  = var.sp_application_id
+  #   client_secret              = var.sp_application_secret
+  # }
 
   lifecycle {
     ignore_changes             = [
@@ -131,10 +131,10 @@ resource azurerm_kubernetes_cluster aks {
 
   tags                         = var.tags
 
-  depends_on                   = [
-    azurerm_role_assignment.spn_permission,
-    azurerm_role_assignment.spn_network_permission,
-  ]
+  # depends_on                   = [
+  #   azurerm_role_assignment.spn_permission,
+  #   azurerm_role_assignment.spn_network_permission,
+  # ]
 }
 
 data azurerm_private_endpoint_connection api_server_endpoint {
