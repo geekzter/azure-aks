@@ -38,4 +38,3 @@ backend.tf
 # Ignore temporary files
 ~*.*
 tmp*.*
-*.lock.*
