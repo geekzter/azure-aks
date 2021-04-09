@@ -13,6 +13,11 @@ output firewall_fqdn {
 output firewall_id {
   value                        = azurerm_firewall.iag.id
 }
+
+output nodes_ip_group_id {
+  value                        = azurerm_ip_group.nodes.id
+}
+
 output subnet_ids {
   value                        = zipmap(azurerm_subnet.subnet.*.name, azurerm_subnet.subnet.*.id)
 }

@@ -53,13 +53,14 @@ module aks_network {
   deploy_agic                  = var.deploy_agic
   firewall_id                  = module.network.firewall_id
   location                     = var.location
+  nodes_ip_group_id            = module.network.nodes_ip_group_id
   nodes_subnet_id              = module.network.subnet_ids["nodes"]
   peer_network_id              = var.peer_network_id
   tags                         = azurerm_resource_group.rg.tags
 
   count                        = var.deploy_aks ? 1 : 0
   depends_on                   = [
-    module.aks,
+    # module.aks,
     #module.network
   ]
 }

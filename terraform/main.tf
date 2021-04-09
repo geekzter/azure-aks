@@ -69,7 +69,7 @@ resource azurerm_container_registry acr {
 }
 
 resource azurerm_log_analytics_workspace log_analytics {
-  name                         = "${lower(var.resource_prefix)}alaworkspace${local.suffix}"
+  name                         = "${azurerm_resource_group.rg.name}-logs"
   # Doesn't deploy in all regions e.g. South India
   location                     = var.workspace_location
   resource_group_name          = azurerm_resource_group.rg.name
@@ -77,4 +77,17 @@ resource azurerm_log_analytics_workspace log_analytics {
   retention_in_days            = 90 
   
   tags                         = azurerm_resource_group.rg.tags
+}
+resource azurerm_log_analytics_saved_search query {
+  name                         = each.value
+  log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
+
+  category                     = "Favorites"
+  display_name                 = replace(replace(each.value,"-"," "),".kql","")
+  query                        = file("${path.root}/../kusto/${each.value}")
+
+  for_each                     = toset([
+    "denied-outbound-http-traffic.kql",
+    "denied-outbound-traffic.kql",
+  ])
 }

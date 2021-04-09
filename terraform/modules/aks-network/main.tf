@@ -38,15 +38,6 @@ resource azurerm_ip_group api_server {
   tags                         = var.tags
 }
 
-resource azurerm_ip_group nodes {
-  name                         = "${data.azurerm_resource_group.rg.name}-ipgroup-nodes"
-  location                     = var.location
-  resource_group_name          = var.resource_group_name
-  cidrs                        = data.azurerm_subnet.nodes_subnet.address_prefixes
-
-  tags                         = var.tags
-}
-
 # Set up name resolution for peered network
 data azurerm_private_dns_zone api_server_domain {
   name                         = local.api_server_domain
