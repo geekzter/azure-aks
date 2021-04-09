@@ -135,7 +135,7 @@ jobs:
     - task: AzureCLI@2
       name: teardown
       displayName: 'Tear down remaining resources & Clear Terraform workspace'
-      condition: allways()
+      condition: always()
       inputs:
         azureSubscription: '$(subscriptionConnection)'
         scriptType: pscore
