@@ -1,23 +1,3 @@
-# # Inbound port forwarding rules
-# resource azurerm_firewall_nat_rule_collection iag_nat_rules {
-#   name                         = "${data.azurerm_firewall.iag.name}-aks-fwd-rules"
-#   azure_firewall_name          = data.azurerm_firewall.iag.name
-#   resource_group_name          = data.azurerm_firewall.iag.resource_group_name
-#   priority                     = 1002
-#   action                       = "Dnat"
-
-#   # API Server
-#   rule {
-#     name                       = "AllowInboundAPIServer"
-#     source_ip_groups           = [var.admin_ip_group_id]
-#     destination_ports          = [split(":",data.azurerm_kubernetes_cluster.aks.kube_admin_config.0.host)[2]]
-#     destination_addresses      = [data.azurerm_public_ip.iag_pip.ip_address]
-#     translated_port            = split(":",data.azurerm_kubernetes_cluster.aks.kube_admin_config.0.host)[2]
-#     translated_address         = local.kubernetes_api_ip_address
-#     protocols                  = ["TCP"]
-#   }
-# }
-
 # Azure Internal Load Balancer
 resource kubernetes_service internal_load_balancer {
   metadata {
