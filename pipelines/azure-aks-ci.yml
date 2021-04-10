@@ -154,6 +154,29 @@ jobs:
         powerShellIgnoreLASTEXITCODE: false
         workingDirectory: '$(terraformDirectory)'
 
+    - ${{ if eq(parameters.deploy, true) }}:
+      - task: AzureCLI@2
+        displayName: 'Deploy applications'
+        inputs:
+          azureSubscription: '$(subscriptionConnection)'
+          scriptType: pscore
+          scriptLocation: inlineScript
+          inlineScript: |
+            # Propagate pipeline Service Principal as Terraform variables
+            $env:ARM_CLIENT_ID       ??= $env:servicePrincipalId
+            $env:ARM_CLIENT_SECRET   ??= $env:servicePrincipalKey
+            $env:ARM_TENANT_ID       ??= $env:tenantId
+            # Get from Azure CLI context
+            $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
+            $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)              
+            
+            ./deploy_app.ps1
+          addSpnToEnvironment: true
+          useGlobalConfig: true
+          failOnStandardError: true
+          powerShellIgnoreLASTEXITCODE: false
+          workingDirectory: '$(scriptDirectory)'
+
     - ${{ if eq(parameters.destroy, true) }}:
       - task: AzureCLI@2
         displayName: 'Terraform destroy'
@@ -177,7 +200,7 @@ jobs:
           powerShellIgnoreLASTEXITCODE: false
           workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if not(eq(parameters.destroy, 'Never')) }}:
+    - ${{ if not(eq(parameters.destroy, true)) }}:
       - task: AzureCLI@2
         name: teardown
         displayName: 'Tear down remaining resources'
