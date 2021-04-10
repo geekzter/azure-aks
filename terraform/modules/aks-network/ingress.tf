@@ -19,9 +19,6 @@ resource kubernetes_service internal_load_balancer {
   }
 
   depends_on                   = [
-    azurerm_firewall_network_rule_collection.iag_net_outbound_rules,
-    azurerm_firewall_application_rule_collection.aks_app_rules,
-    azurerm_private_dns_zone_virtual_network_link.api_server_domain,
     null_resource.application_gateway_add_on, # HACK; If AGiC can be provisioned, surely this can be provisioned
   ]
 
@@ -48,6 +45,12 @@ resource null_resource application_gateway_add_on {
     }  
     working_dir                = "../scripts"
   }
+
+  depends_on                   = [
+    azurerm_firewall_network_rule_collection.iag_net_outbound_rules,
+    azurerm_firewall_application_rule_collection.aks_app_rules,
+    azurerm_private_dns_zone_virtual_network_link.api_server_domain,
+  ]
 
   count                        = var.deploy_agic ? 1 : 0
 }
