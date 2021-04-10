@@ -2,7 +2,7 @@
 # https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#azure-global-required-network-rules
 # Rules that have a dependency on AKS being created first
 resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
-  name                         = "${data.azurerm_firewall.iag.name}-network-rules"
+  name                         = "${data.azurerm_firewall.iag.name}-aks-network-rules"
   azure_firewall_name          = data.azurerm_firewall.iag.name
   resource_group_name          = data.azurerm_firewall.iag.resource_group_name
   priority                     = 1002
@@ -66,7 +66,7 @@ resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
 
 # https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#azure-global-required-fqdn--application-rules
 resource azurerm_firewall_application_rule_collection aks_app_rules {
-  name                         = "${data.azurerm_firewall.iag.name}-app-rules"
+  name                         = "${data.azurerm_firewall.iag.name}-aks-app-rules"
   azure_firewall_name          = data.azurerm_firewall.iag.name
   resource_group_name          = data.azurerm_firewall.iag.resource_group_name
   priority                     = 2002
