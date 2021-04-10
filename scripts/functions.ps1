@@ -39,7 +39,7 @@ function Get-LoadBalancerIPAddress(
 }
 
 function Get-TerraformDirectory() {
-    return (Join-Path (Split-Path -parent -Path $MyInvocation.PSScriptRoot) "Terraform")
+    return (Join-Path (Split-Path -parent -Path $MyInvocation.PSScriptRoot) "terraform")
 }
 
 function Get-TerraformOutput (
