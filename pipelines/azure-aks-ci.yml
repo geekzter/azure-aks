@@ -44,6 +44,8 @@ variables:
 - name: 'repository'
   value: 'azkre-aks'
 
+- name: AZURE_EXTENSION_USE_DYNAMIC_INSTALL
+  value: 'yes_without_prompt'
 - name: 'TF_IN_AUTOMATION'
   value: 'true'
 - name: 'TF_INPUT'
