@@ -8,7 +8,6 @@ function Get-Tools() {
         Write-Warning "Azure CLI not found"
         exit
     }
-    az extension add --name aks-preview 2>$null
     if (!(Get-Command kubectl -ErrorAction SilentlyContinue)) {
         Write-Information "kubectl not found, using Azure CLI to get it..."
         az aks install-cli
