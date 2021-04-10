@@ -46,7 +46,7 @@ resource azurerm_resource_group rg {
     "application",               "Kubernetes",
     "environment",               local.environment,
     "provisioner",               "terraform",
-    "repository",                basename(abspath("${path.root}/..")),
+    "repository",                "azure-aks",
     "runid",                     var.run_id,
     "shutdown",                  "true",
     "suffix",                    local.suffix,
