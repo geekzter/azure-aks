@@ -2,7 +2,6 @@ variable address_space {
   default     = "10.32.0.0/12"
 }
 
-
 variable configure_kubernetes {
   type        = bool
   default     = false

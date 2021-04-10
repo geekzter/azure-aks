@@ -1,29 +1,29 @@
 # Azure Internal Load Balancer
-resource kubernetes_service internal_load_balancer {
-  metadata {
-    annotations                = {
-      "service.beta.kubernetes.io/azure-load-balancer-internal" = "true"
-    }
-    name                       = "azure-all-front"
-  }
-  spec {
-    selector                   = {
-      app                      = "azure-all-front"
-    }
-    session_affinity           = "ClientIP"
-    port {
-      port                     = 80
-    }
+# resource kubernetes_service internal_load_balancer {
+#   metadata {
+#     annotations                = {
+#       "service.beta.kubernetes.io/azure-load-balancer-internal" = "true"
+#     }
+#     name                       = "azure-all-front"
+#   }
+#   spec {
+#     selector                   = {
+#       app                      = "azure-all-front"
+#     }
+#     session_affinity           = "ClientIP"
+#     port {
+#       port                     = 80
+#     }
 
-    type                       = "LoadBalancer"
-  }
+#     type                       = "LoadBalancer"
+#   }
 
-  depends_on                   = [
-    null_resource.application_gateway_add_on, # HACK; If AGiC can be provisioned, surely this can be provisioned
-  ]
+#   depends_on                   = [
+#     null_resource.application_gateway_add_on, # HACK; If AGiC can be provisioned, surely this can be provisioned
+#   ]
 
-  count                        = var.peer_network_id != "" ? 1 : 0
-}
+#   count                        = var.peer_network_id != "" ? 1 : 0
+# }
 
 locals {
    application_gateway_name    = "${var.resource_group_name}-waf"
