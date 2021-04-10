@@ -110,6 +110,7 @@ jobs:
 
     - task: AzureCLI@2
       displayName: 'Terraform apply'
+      name: apply
       inputs:
         azureSubscription: '$(subscriptionConnection)'
         scriptType: pscore
@@ -146,6 +147,15 @@ jobs:
                          -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT_NAME)" `
                          -backend-config="container_name=$(TF_STATE_CONTAINER_NAME)" 
           terraform apply -auto-approve
+
+          # Export Terraform output as task output
+          $terraformOutput = terraform output -json | ConvertFrom-Json -AsHashtable
+          foreach ($outputVariable in $terraformOutput.keys) {
+              $value = $terraformOutput[$outputVariable].value
+              if ($value) {
+                  Write-Host "##vso[task.setvariable variable=$outputVariable;isOutput=true]$value"
+              }
+          }            
         addSpnToEnvironment: true
         useGlobalConfig: true
         failOnStandardError: true
@@ -174,6 +184,8 @@ jobs:
           failOnStandardError: true
           powerShellIgnoreLASTEXITCODE: false
           workingDirectory: '$(scriptDirectory)'
+        env:
+          KUBECONFIG: '$(apply.kube_config)'
 
     - ${{ if eq(parameters.destroy, true) }}:
       - task: AzureCLI@2
