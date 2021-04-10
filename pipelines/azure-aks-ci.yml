@@ -13,6 +13,10 @@ parameters:
   - ci1
   - ci2
   - ci3
+- name: inherit
+  displayName: Inherit state
+  type: boolean
+  default: false
 - name: deploy
   displayName: Deploy applications
   type: boolean
@@ -109,6 +113,32 @@ jobs:
       displayName: 'Use preferred Terraform version'
       inputs:
         terraformVersion: '$(terraformConfig.version)'
+
+    - ${{ if not(eq(parameters.inherit, true)) }}:
+      - task: AzureCLI@2
+        name: clear
+        displayName: 'Remove resources from previous runs'
+        inputs:
+          azureSubscription: '$(subscriptionConnection)'
+          scriptType: pscore
+          scriptLocation: inlineScript
+          inlineScript: |
+            # Remove VNet peerings
+            if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
+              $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
+              if ($peeringIDs) {
+                Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
+                &{ # az writes information to stderr
+                  $ErrorActionPreference = 'SilentlyContinue'
+                  az resource delete --ids $peeringIDs 2>&1
+                }
+              } else {
+                Write-Host "No virtual network peerings to remove"
+              }
+            }
+          useGlobalConfig: true
+          failOnStandardError: true
+          workingDirectory: '$(terraformDirectory)'
 
     - task: AzureCLI@2
       displayName: 'Terraform apply'
@@ -270,6 +300,20 @@ jobs:
               Write-Host "No resources to remove"
             }
 
+            # Remove VNet peerings
+            if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
+              $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
+              if ($peeringIDs) {
+                Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
+                &{ # az writes information to stderr
+                  $ErrorActionPreference = 'SilentlyContinue'
+                  az resource delete --ids $peeringIDs 2>&1
+                }
+              } else {
+                Write-Host "No virtual network peerings to remove"
+              }
+            }
+
             # Clean up Terraform state
             # Propagate pipeline Service Principal as Terraform variables
             $env:ARM_CLIENT_ID       ??= $env:servicePrincipalId
@@ -281,9 +325,9 @@ jobs:
             Copy-Item backend.tf.sample backend.tf
             terraform version
             terraform init -reconfigure `
-                          -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP_NAME)" `
-                          -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT_NAME)" `
-                          -backend-config="container_name=$(TF_STATE_CONTAINER_NAME)" 
+                           -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP_NAME)" `
+                           -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT_NAME)" `
+                           -backend-config="container_name=$(TF_STATE_CONTAINER_NAME)" 
             $terraformState = (terraform state pull | ConvertFrom-Json)
             if ($terraformState.resources) {
               Write-Host "Clearing Terraform state in workspace ${env:TF_WORKSPACE}..."
@@ -298,4 +342,4 @@ jobs:
           addSpnToEnvironment: true
           useGlobalConfig: true
           failOnStandardError: true
-          workingDirectory: '$(terraformDirectory)'        
+          workingDirectory: '$(terraformDirectory)'
