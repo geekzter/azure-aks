@@ -205,7 +205,7 @@ jobs:
         name: teardown
         displayName: 'Tear down remaining resources'
         condition: always()
-        enabled: ${{ if eq(parameters.destroy, true) }}
+        enabled: ${{ parameters.destroy }}
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
