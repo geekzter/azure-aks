@@ -115,6 +115,9 @@ jobs:
           $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
           $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)              
           
+          # Get Agent VNet information
+          $env:TF_VAR_peer_network_id = $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
+
           # Convert uppercased Terraform environment variables to their original casing expeted by Terraform
           foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
             $upperCaseName = $tfvar.Name + "_UC"
