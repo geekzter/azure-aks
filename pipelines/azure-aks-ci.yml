@@ -165,6 +165,7 @@ jobs:
         workingDirectory: '$(terraformDirectory)'
 
     - task: Kubernetes@1
+      displayName: 'Deploy ASP.NET App manifest'
       inputs:
         connectionType: 'None'
         command: 'apply'
