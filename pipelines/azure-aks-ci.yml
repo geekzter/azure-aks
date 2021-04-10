@@ -200,7 +200,7 @@ jobs:
           powerShellIgnoreLASTEXITCODE: false
           workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if not(eq(parameters.destroy, true)) }}:
+    - ${{ if eq(parameters.destroy, true) }}:
       - task: AzureCLI@2
         name: teardown
         displayName: 'Tear down remaining resources'
