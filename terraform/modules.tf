@@ -2,6 +2,7 @@
 module network {
   source                       = "./modules/network"
   resource_group_name          = azurerm_resource_group.rg.name
+  address_space                = var.address_space
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
   peer_network_has_gateway     = var.peer_network_has_gateway
   peer_network_id              = var.peer_network_id
@@ -9,14 +10,6 @@ module network {
     "nodes"
   ]
 }
-
-# Provision base network infrastructure
-# module service_principal {
-#   source                       = "./modules/service-principal"
-#   name                         = "aks-${terraform.workspace}-${local.suffix}"
-
-#   count                        = local.create_service_principal ? 1 : 0
-# }
 
 # Provision base Kubernetes infrastructure provided by Azure
 module aks {
@@ -31,9 +24,6 @@ module aks {
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
   node_subnet_id               = module.network.subnet_ids["nodes"]
   resource_group_id            = azurerm_resource_group.rg.id
-  # sp_application_id            = local.aks_sp_application_id
-  # sp_application_secret        = local.aks_sp_application_secret
-  # sp_object_id                 = local.aks_sp_object_id
   ssh_public_key_file          = var.ssh_public_key_file
   tags                         = azurerm_resource_group.rg.tags
 

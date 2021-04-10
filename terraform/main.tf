@@ -19,10 +19,6 @@ resource random_string suffix {
 
 locals {
   aks_name                     = "aks-${terraform.workspace}-${local.suffix}"
-  # aks_sp_application_id        = local.create_service_principal ? module.service_principal.0.application_id : var.aks_sp_application_id
-  # aks_sp_object_id             = local.create_service_principal ? module.service_principal.0.object_id : var.aks_sp_object_id
-  # aks_sp_application_secret    = local.create_service_principal ? module.service_principal.0.secret : var.aks_sp_application_secret
-  create_service_principal     = (var.aks_sp_application_id == "" || var.aks_sp_object_id == "" || var.aks_sp_application_secret == "") ? true : false
   kube_config_path             = var.kube_config_path != "" ? var.kube_config_path : "${path.root}/../.kube/${local.workspace_moniker}config"
 
 # Making sure all character classes are represented, as random does not guarantee that  

@@ -1,15 +1,7 @@
-variable aks_sp_application_id {
-  description = "Application ID of AKS Service Principal"
-  default     = ""
+variable address_space {
+  default     = "10.32.0.0/12"
 }
-variable aks_sp_object_id {
-  description = "Object ID of AKS Service Principal"
-  default     = ""
-}
-variable aks_sp_application_secret {
-  description = "Password of AKS Service Principal"
-  default     = ""
-}
+
 
 variable configure_kubernetes {
   type        = bool
