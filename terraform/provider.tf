@@ -4,7 +4,7 @@ terraform {
     external                   = "~> 2.1"
     helm                       = "~> 1.3"
     http                       = "~> 2.1"
-    kubernetes                 = "~> 1.13"
+    kubernetes                 = "~> 2.0"
     local                      = "~> 2.1"
     null                       = "~> 2.1"
     random                     = "~> 3.1"
