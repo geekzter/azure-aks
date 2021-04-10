@@ -60,6 +60,8 @@ variables:
   value: 0
 - name: 'TF_WORKSPACE'
   value: ${{ parameters.workspace }}
+- name: 'manifestDirectory'
+  value: '$(Build.SourcesDirectory)/manifests'
 - name: 'scriptDirectory'
   value: '$(Build.SourcesDirectory)/scripts'
 - name: 'terraformDirectory'
@@ -162,6 +164,17 @@ jobs:
         powerShellIgnoreLASTEXITCODE: false
         workingDirectory: '$(terraformDirectory)'
 
+    - task: Kubernetes@1
+      inputs:
+        connectionType: 'None'
+        command: 'apply'
+        useConfigurationFile: true
+        configuration: './aspnetapp.yaml'
+        secretType: 'generic'
+        workingDirectory: '$(manifestDirectory)'
+      env:
+        KUBECONFIG: '$(apply.kube_config)'
+
     - ${{ if eq(parameters.deploy, true) }}:
       - task: AzureCLI@2
         displayName: 'Deploy applications'
@@ -177,7 +190,7 @@ jobs:
             # Get from Azure CLI context
             $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
             $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)              
-            
+
             ./deploy_app.ps1
           addSpnToEnvironment: true
           useGlobalConfig: true
