@@ -98,6 +98,7 @@ steps:
     backendAzureRmResourceGroupName: 'Automation'
     backendAzureRmStorageAccountName: 'ewterraformstate'
     backendAzureRmContainerName: 'aks'
+    backendAzureRmKey: 'terraform.tfstate'
     allowTelemetryCollection: true
 
 - task: TerraformCLI@0
