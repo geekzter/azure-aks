@@ -28,14 +28,6 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
-
 - task: KubectlInstaller@0
   displayName: 'Install kubectl'
   inputs:
@@ -104,7 +96,7 @@ steps:
     Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"    
 
     # Is this still needed?
-    # Copy-Item backend.tf.sample backend.tf
+    Copy-Item backend.tf.sample backend.tf
   name: terraformConfig
   displayName: 'Prepare Terraform config'
   workingDirectory: '$(terraformDirectory)'

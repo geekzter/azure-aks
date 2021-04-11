@@ -88,6 +88,32 @@ jobs:
     clean: all
 
   steps:
+    - ${{ if not(eq(parameters.inherit, true)) }}:
+      - task: AzureCLI@2
+        name: clear
+        displayName: 'Remove resources from previous runs'
+        inputs:
+          azureSubscription: '$(subscriptionConnection)'
+          scriptType: pscore
+          scriptLocation: inlineScript
+          inlineScript: |
+            # Remove VNet peerings
+            if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
+              $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
+              if ($peeringIDs) {
+                Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
+                &{ # az writes information to stderr
+                  $ErrorActionPreference = 'SilentlyContinue'
+                  az resource delete --ids $peeringIDs 2>&1
+                }
+              } else {
+                Write-Host "No virtual network peerings to remove"
+              }
+            }
+          useGlobalConfig: true
+          failOnStandardError: true
+          workingDirectory: '$(terraformDirectory)'
+
     - pwsh: |
         # List environment variables
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
@@ -119,35 +145,9 @@ jobs:
       workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformInstaller@0
-      displayName: 'Use preferred Terraform version'
+      displayName: 'Install terraform'
       inputs:
         terraformVersion: '$(terraformConfig.version)'
-
-    - ${{ if not(eq(parameters.inherit, true)) }}:
-      - task: AzureCLI@2
-        name: clear
-        displayName: 'Remove resources from previous runs'
-        inputs:
-          azureSubscription: '$(subscriptionConnection)'
-          scriptType: pscore
-          scriptLocation: inlineScript
-          inlineScript: |
-            # Remove VNet peerings
-            if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
-              $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
-              if ($peeringIDs) {
-                Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
-                &{ # az writes information to stderr
-                  $ErrorActionPreference = 'SilentlyContinue'
-                  az resource delete --ids $peeringIDs 2>&1
-                }
-              } else {
-                Write-Host "No virtual network peerings to remove"
-              }
-            }
-          useGlobalConfig: true
-          failOnStandardError: true
-          workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
@@ -199,7 +199,8 @@ jobs:
         kubectlVersion: 'latest'
 
     - task: Kubernetes@1
-      displayName: 'Apply ASP.NET App manifest with kubectl'
+      displayName: 'kubectl apply: ASP.NET App'
+      condition: and(succeeded(), gt(length(variables['TF_OUT_AKS_NAME']),0), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
       inputs:
         connectionType: 'Azure Resource Manager'
         azureSubscriptionEndpoint: '$(subscriptionConnection)'
@@ -212,7 +213,8 @@ jobs:
         secretType: 'generic'
         
     - task: Kubernetes@1
-      displayName: 'Apply Voting App manifest with kubectl'
+      displayName: 'kubectl apply: Voting App'
+      condition: and(succeeded(), gt(length(variables['TF_OUT_AKS_NAME']),0), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
       inputs:
         connectionType: 'Azure Resource Manager'
         azureSubscriptionEndpoint: '$(subscriptionConnection)'
@@ -226,6 +228,7 @@ jobs:
 
     - ${{ if eq(parameters.deploy, true) }}:
       - task: AzureCLI@2
+        condition: and(succeeded(), gt(length(variables['TF_OUT_AKS_NAME']),0), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
         displayName: 'Test applications'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
@@ -247,7 +250,7 @@ jobs:
           powerShellIgnoreLASTEXITCODE: false
           workingDirectory: '$(scriptDirectory)'
         env:
-          KUBECONFIG: '$(apply.kube_config)'
+          KUBECONFIG: '$(apply.kube_config_path)'
 
     - ${{ if eq(parameters.destroy, true) }}:
       - task: TerraformCLI@0
