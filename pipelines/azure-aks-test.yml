@@ -3,6 +3,7 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+trigger: none
 
 variables:
 - group: aks-test
@@ -14,7 +15,7 @@ variables:
 - name: 'TF_INPUT'
   value: 0
 - name: 'TF_WORKSPACE'
-  value: 'ci1'
+  value: 'ci2'
 - name: 'manifestDirectory'
   value: '$(Build.SourcesDirectory)/manifests'
 - name: 'scriptDirectory'
@@ -85,6 +86,22 @@ steps:
 - pwsh: |
     # List environment variables
     Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
+
+    # Convert uppercased Terraform environment variables to their original casing expeted by Terraform
+    foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
+      $upperCaseName = $tfvar.Name + "_UC"
+      $properCaseName = $tfvar.Name.Substring(0,7) + $tfvar.Name.Substring(7).ToLowerInvariant()
+      $null = New-Item -Path env:$upperCaseName -Value $tfVar.Value
+      Remove-Item -Path env:$($tfvar.Name)
+      $null = New-Item -Path env:$properCaseName -Value $tfVar.Value
+      Set-Item -Path env:$upperCaseName -Value $null
+
+      Write-Host "$tfvar.Name.Substring(7).ToLowerInvariant() = `"$tfVar.Value`"" | Out-File ci.auto.tfvars -Append -Force
+    } 
+    Write-Host "Contents of ci.auto.tfvars:"
+    Get-Content ci.auto.tfvars
+
+    # Is this still needed?
     Copy-Item backend.tf.sample backend.tf
     terraform version
   displayName: 'Prepare Terraform config'
@@ -120,21 +137,26 @@ steps:
     allowTelemetryCollection: true
     publishPlanResults: 'ci'
 
-- task: TerraformCLI@0
-  displayName: 'Terraform apply'
-  inputs:
-    command: 'apply'
-    workingDirectory: '$(terraformDirectory)'
-    environmentServiceName: '$(subscriptionConnection)'
-    runAzLogin: true
-    allowTelemetryCollection: true
+# - task: TerraformCLI@0
+#   displayName: 'Terraform apply'
+#   inputs:
+#     command: 'apply'
+#     workingDirectory: '$(terraformDirectory)'
+#     environmentServiceName: '$(subscriptionConnection)'
+#     runAzLogin: true
+#     allowTelemetryCollection: true
 
-- task: TerraformCLI@0
-  displayName: 'Terraform destroy'
-  inputs:
-    command: 'destroy'
-    workingDirectory: '$(terraformDirectory)'
-    environmentServiceName: '$(subscriptionConnection)'
-    runAzLogin: true
-    allowTelemetryCollection: true
+# - task: TerraformCLI@0
+#   displayName: 'Terraform destroy'
+#   inputs:
+#     command: 'destroy'
+#     workingDirectory: '$(terraformDirectory)'
+#     environmentServiceName: '$(subscriptionConnection)'
+#     runAzLogin: true
+#     allowTelemetryCollection: true
     
+- pwsh: |
+    Remove-Item $(terraformDirectory)/ci.auto.tfvars -Force
+  displayName: 'Cleanup'
+  condition: always()
+  workingDirectory: '$(terraformDirectory)'
