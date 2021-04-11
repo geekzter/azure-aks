@@ -199,17 +199,22 @@ jobs:
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
       displayName: 'List environment variables'
 
-    # - task: Kubernetes@1
-    #   displayName: 'Deploy ASP.NET App manifest'
-    #   inputs:
-    #     azureSubscriptionEndpoint: '$(subscriptionConnection)'
-    #     azureResourceGroup: '$(apply.resource_group)'
-    #     kubernetesCluster: '$(apply.aks_name)'
-    #     useClusterAdmin: true
-    #     command: 'apply'
-    #     useConfigurationFile: true
-    #     configuration: '$(manifestDirectory)/aspnetapp.yaml'
-    #     secretType: 'generic'
+    - task: KubectlInstaller@0
+      displayName: 'Install kubectl'
+      inputs:
+        kubectlVersion: 'latest'
+
+    - task: Kubernetes@1
+      displayName: 'Deploy ASP.NET App manifest'
+      inputs:
+        azureSubscriptionEndpoint: '$(subscriptionConnection)'
+        azureResourceGroup: '$(apply.resource_group)'
+        kubernetesCluster: '$(apply.aks_name)'
+        useClusterAdmin: true
+        command: 'apply'
+        useConfigurationFile: true
+        configuration: '$(manifestDirectory)/aspnetapp.yaml'
+        secretType: 'generic'
 
     - ${{ if eq(parameters.deploy, true) }}:
       - task: AzureCLI@2
