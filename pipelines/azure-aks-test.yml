@@ -15,7 +15,7 @@ variables:
 - name: 'TF_INPUT'
   value: 0
 - name: 'TF_WORKSPACE'
-  value: 'ci3'
+  value: 'ci1'
 - name: 'manifestDirectory'
   value: '$(Build.SourcesDirectory)/manifests'
 - name: 'scriptDirectory'
@@ -140,7 +140,7 @@ steps:
     workingDirectory: '$(terraformDirectory)'
     environmentServiceName: '$(subscriptionConnection)'
     runAzLogin: true
-    commandOptions: '$(terraformConfig.variableOption)'
+    commandOptions: '$(terraformConfig.variableOption) -out=ci.tfplan'
     allowTelemetryCollection: true
     publishPlanResults: 'ci'
 
@@ -151,13 +151,14 @@ steps:
     workingDirectory: '$(terraformDirectory)'
     environmentServiceName: '$(subscriptionConnection)'
     runAzLogin: true
-    commandOptions: '$(terraformConfig.variableOption)'
+    # commandOptions: '$(terraformConfig.variableOption)'
+    commandOptions: 'ci.tfplan'
     allowTelemetryCollection: true
 
 - task: TerraformCLI@0
   displayName: 'Terraform output'
   inputs:
-    command: 'apply'
+    command: 'output'
     workingDirectory: '$(terraformDirectory)'
     environmentServiceName: '$(subscriptionConnection)'
     runAzLogin: true
@@ -177,8 +178,8 @@ steps:
     runAzLogin: true
     allowTelemetryCollection: true
     
-- pwsh: |
-    Remove-Item $(terraformDirectory)/ci.auto.tfvars -Force
-  displayName: 'Cleanup'
-  condition: always()
-  workingDirectory: '$(terraformDirectory)'
+# - pwsh: |
+#     Remove-Item $(terraformDirectory)/ci.auto.tfvars -Force
+#   displayName: 'Cleanup'
+#   condition: always()
+#   workingDirectory: '$(terraformDirectory)'
