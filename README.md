@@ -3,7 +3,7 @@
 This repo lets you provision a network isolated Azure Kubernetes Service, customizing egress, ingress with both Internal Load Balancer and Application Gateway, and the Kubernetes API Server (AKS management nodes) connected via Private Link. It uses Terraform as that can create all the Azure AD, Azure and Kubernetes resources required.
  
 ## Description
-![alt text](diagram.png "Network view")
+![alt text](visuals/diagram.png "Network view")
 
 When you create an Azure Kubernetes Service (AKS) in the Azure Portal, or with the Azure CLI, by default it will be open in the sense of traffic (both application & management) using public IP addresses. This is a challenge in Enterprise, especially in regulated industries. Effort is needed to embed services in Virtual Networks, and in the case of AKS there are quite a few moving parts to consider.
 
@@ -31,14 +31,6 @@ I won't go into detail of these modes, as the network mode is __irrelevant__ for
 - Application deployment requires [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
 If you're on macOS, you can run `brew bundle` in the repo root to get the required tools, as there is a `Brewfile`. 
-
-### Permissions
-Terraform will create a Service Principal, hence you will need the ability to create one in your AAD (Azure Active Directory) tenant. If you do not have that permission, you can use a pre-provisioned Service Principal instead and configure it using the following Terraform variables:
-```
-aks_sp_application_id
-aks_sp_application_secret
-aks_sp_object_id
-```
 
 ### Connectivity
 As this provisions an isolated AKS, how will you be able to access the AKS cluster once deployed? If you set the `peer_network_id` Terraform variable to a network where you're running Terraform from (or you are connected to e.g. using VPN), this project will set up the peering and Private DNS link required to look up the Kubernetes API Server and access cluster nodes. Without this you can only perform partial deployment, you won't be able to deploy applications.
@@ -72,7 +64,7 @@ Once deployed the applications will look like this:
 
 Internal Load Balancer: Voting App  |Application Gateway: ASP.NET App
 :----------------:|:-----------------:
-![](votingapp.png)|![](aspnetapp.png)
+![](visuals/votingapp.png)|![](visuals/aspnetapp.png)
 
 
 ### Clean Up

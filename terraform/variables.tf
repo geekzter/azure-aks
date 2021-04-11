@@ -1,19 +1,10 @@
-variable aks_sp_application_id {
-  description = "Application ID of AKS Service Principal"
-  default     = ""
-}
-variable aks_sp_object_id {
-  description = "Object ID of AKS Service Principal"
-  default     = ""
-}
-variable aks_sp_application_secret {
-  description = "Password of AKS Service Principal"
-  default     = ""
+variable address_space {
+  default     = "10.32.0.0/12"
 }
 
 variable configure_kubernetes {
   type        = bool
-  default     = true
+  default     = false
   description = "Whether to configure Kubernetes using the Terraform Kubernetes provider"
 }
 
@@ -51,7 +42,7 @@ variable peer_network_id {
 
 variable resource_prefix {
   description = "The prefix to put in front of resource names created"
-  default     = "K8S"
+  default     = "k8s"
 }
 variable resource_suffix {
   description = "The suffix to put at the of resource names created"
@@ -61,6 +52,11 @@ variable resource_suffix {
 variable resource_environment {
   description = "The logical environment (tier) resource will be deployed in"
   default     = "" # Empty string defaults to workspace name
+}
+
+variable run_id {
+  description = "The ID that identifies the pipeline / workflow that invoked Terraform"
+  default     = ""
 }
 
 variable ssh_public_key_file {

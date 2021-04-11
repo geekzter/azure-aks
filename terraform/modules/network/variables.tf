@@ -1,6 +1,4 @@
-variable address_space {
-  default = "10.32.0.0/12"
-}
+variable address_space {}
 variable dns_servers {
   type    = list
   default = ["168.63.129.16"]

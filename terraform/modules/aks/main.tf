@@ -26,20 +26,31 @@ data azurerm_subnet nodes_subnet {
   resource_group_name          = element(split("/",var.node_subnet_id),length(split("/",var.node_subnet_id))-7)
 }
 
+resource azurerm_user_assigned_identity aks_identity {
+  name                         = "${var.name}-identity"
+  location                     = var.location
+  resource_group_name          = local.resource_group_name
+}
+
 # AKS needs permission to make changes for kubelet networking mode
 resource azurerm_role_assignment spn_network_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Network Contributor"
-  # principal_id                 = azurerm_kubernetes_cluster.aks.identity[0].principal_id
-  principal_id                 = var.sp_object_id
+  principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
+}
+
+# AKS needs permission for BYO DNS
+resource azurerm_role_assignment spn_dns_permission {
+  scope                        = var.resource_group_id
+  role_definition_name         = "Private DNS Zone Contributor"
+  principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
 }
 
 # Requires Terraform owner access to resource group, in order to be able to perform access management
 resource azurerm_role_assignment spn_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Virtual Machine Contributor"
-  # principal_id                 = azurerm_kubernetes_cluster.aks.identity[0].principal_id
-  principal_id                 = var.sp_object_id
+  principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
 }
 
 # Grant Terraform user Cluster Admin role
@@ -83,33 +94,22 @@ resource azurerm_kubernetes_cluster aks {
   default_node_pool {
     availability_zones         = [1,2,3]
     enable_auto_scaling        = true
+    enable_host_encryption     = false # Requires 'Microsoft.Compute/EncryptionAtHost' feature
     enable_node_public_ip      = false
     min_count                  = 3
     max_count                  = 10
-    name                       = terraform.workspace
+    name                       = "default"
     node_count                 = 3
     tags                       = var.tags
-    vm_size                    = "Standard_D2_v2"
+    # https://docs.microsoft.com/en-us/azure/virtual-machines/disk-encryption#supported-vm-sizes
+    vm_size                    = "Standard_D2s_v3"
     vnet_subnet_id             = var.node_subnet_id
   }
 
-  # Clusters using managed identity do not support bringing your own route table. 
-  # Please see https://aka.ms/aks/customrt for more information
-  # Using service_principal instead
-  # identity {
-  #   type                       = "SystemAssigned"
-  # }
-
-  # BUG: Triggers replacement of resource, forget about it for now
-  # dynamic linux_profile {
-  #   for_each                   = range(fileexists(var.ssh_public_key_file) ? 1 : 0)
-  #   content {
-  #     admin_username           = var.admin_username
-  #     ssh_key {
-  #       key_data               = file(var.ssh_public_key_file)
-  #     }
-  #   }
-  # }
+  identity {
+    type                       = "UserAssigned"
+    user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
+  }
 
   network_profile {
     network_plugin             = "azure"
@@ -127,11 +127,6 @@ resource azurerm_kubernetes_cluster aks {
     enabled                    = true
   }
 
-  service_principal {
-    client_id                  = var.sp_application_id
-    client_secret              = var.sp_application_secret
-  }
-
   lifecycle {
     ignore_changes             = [
       default_node_pool.0.node_count # Ignore changes made by autoscaling
@@ -142,6 +137,7 @@ resource azurerm_kubernetes_cluster aks {
 
   depends_on                   = [
     azurerm_role_assignment.spn_permission,
+    azurerm_role_assignment.spn_dns_permission,
     azurerm_role_assignment.spn_network_permission,
   ]
 }

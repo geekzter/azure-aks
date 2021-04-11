@@ -18,13 +18,17 @@ function Wait-ApplicationGateway(
     [parameter(Mandatory=$true)][string]$ResourceGroupName
 ) {
     $nodeResourceGroupName = $(az aks show -n $AksName -g $ResourceGroupName --query nodeResourceGroup -o tsv)
-    az network application-gateway show -n $ApplicationGatewayName -g $nodeResourceGroupName -o table
+
+    do {
+        $waf = (az network application-gateway show -n $ApplicationGatewayName -g $nodeResourceGroupName -o table 2>$null)
+    } while (!$waf)
+    $waf
 
     $applicationGatewayIpAddressName = "${ApplicationGatewayName}-appgwpip"
     az network public-ip show -n $applicationGatewayIpAddressName -g $nodeResourceGroupName -o table
 }
 
-az extension add --name aks-preview 2>&1
+az extension add --name aks-preview 2>$null
 
 if ($ApplicationGatewayName -ieq $(az aks show -n $AksName -g $ResourceGroupName --query "addonProfiles.ingressApplicationGateway.config.applicationGatewayName" -o tsv)) {
     if ($RemoveIfExists) {

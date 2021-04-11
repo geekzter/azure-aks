@@ -8,7 +8,6 @@ function Get-Tools() {
         Write-Warning "Azure CLI not found"
         exit
     }
-    az extension add --name aks-preview 2>&1
     if (!(Get-Command kubectl -ErrorAction SilentlyContinue)) {
         Write-Information "kubectl not found, using Azure CLI to get it..."
         az aks install-cli
@@ -40,7 +39,7 @@ function Get-LoadBalancerIPAddress(
 }
 
 function Get-TerraformDirectory() {
-    return (Join-Path (Split-Path -parent -Path $MyInvocation.PSScriptRoot) "Terraform")
+    return (Join-Path (Split-Path -parent -Path $MyInvocation.PSScriptRoot) "terraform")
 }
 
 function Get-TerraformOutput (

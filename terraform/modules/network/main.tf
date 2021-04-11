@@ -47,6 +47,7 @@ resource azurerm_subnet subnet {
   virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = data.azurerm_resource_group.rg.name
   address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],var.subnet_bits,count.index+1)]
+  enforce_private_link_endpoint_network_policies = true
 
   count                        = length(var.subnets)
 }

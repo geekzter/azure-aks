@@ -1,50 +1,29 @@
-# # Inbound port forwarding rules
-# resource azurerm_firewall_nat_rule_collection iag_nat_rules {
-#   name                         = "${data.azurerm_firewall.iag.name}-aks-fwd-rules"
-#   azure_firewall_name          = data.azurerm_firewall.iag.name
-#   resource_group_name          = data.azurerm_firewall.iag.resource_group_name
-#   priority                     = 1002
-#   action                       = "Dnat"
-
-#   # API Server
-#   rule {
-#     name                       = "AllowInboundAPIServer"
-#     source_ip_groups           = [var.admin_ip_group_id]
-#     destination_ports          = [split(":",data.azurerm_kubernetes_cluster.aks.kube_admin_config.0.host)[2]]
-#     destination_addresses      = [data.azurerm_public_ip.iag_pip.ip_address]
-#     translated_port            = split(":",data.azurerm_kubernetes_cluster.aks.kube_admin_config.0.host)[2]
-#     translated_address         = local.kubernetes_api_ip_address
-#     protocols                  = ["TCP"]
-#   }
-# }
-
 # Azure Internal Load Balancer
-resource kubernetes_service internal_load_balancer {
-  metadata {
-    annotations                = {
-      "service.beta.kubernetes.io/azure-load-balancer-internal" = "true"
-    }
-    name                       = "azure-all-front"
-  }
-  spec {
-    selector                   = {
-      app                      = "azure-all-front"
-    }
-    session_affinity           = "ClientIP"
-    port {
-      port                     = 80
-    }
+# resource kubernetes_service internal_load_balancer {
+#   metadata {
+#     annotations                = {
+#       "service.beta.kubernetes.io/azure-load-balancer-internal" = "true"
+#     }
+#     name                       = "azure-all-front"
+#   }
+#   spec {
+#     selector                   = {
+#       app                      = "azure-all-front"
+#     }
+#     session_affinity           = "ClientIP"
+#     port {
+#       port                     = 80
+#     }
 
-    type                       = "LoadBalancer"
-  }
+#     type                       = "LoadBalancer"
+#   }
 
-  depends_on                   = [
-    azurerm_private_dns_zone_virtual_network_link.api_server_domain,
-    data.azurerm_kubernetes_cluster.aks
-  ]
+#   depends_on                   = [
+#     null_resource.application_gateway_add_on, # HACK; If AGiC can be provisioned, surely this can be provisioned
+#   ]
 
-  count                        = var.peer_network_id != "" ? 1 : 0
-}
+#   count                        = var.peer_network_id != "" ? 1 : 0
+# }
 
 locals {
    application_gateway_name    = "${var.resource_group_name}-waf"
@@ -61,8 +40,17 @@ resource null_resource application_gateway_add_on {
   provisioner local-exec { 
     interpreter                = ["pwsh", "-nop", "-c"]
     command                    = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ApplicationGatewayName ${local.application_gateway_name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
+    environment                = {
+      AZURE_EXTENSION_USE_DYNAMIC_INSTALL = "yes_without_prompt"
+    }  
     working_dir                = "../scripts"
   }
+
+  depends_on                   = [
+    azurerm_firewall_network_rule_collection.iag_net_outbound_rules,
+    azurerm_firewall_application_rule_collection.aks_app_rules,
+    azurerm_private_dns_zone_virtual_network_link.api_server_domain,
+  ]
 
   count                        = var.deploy_agic ? 1 : 0
 }
