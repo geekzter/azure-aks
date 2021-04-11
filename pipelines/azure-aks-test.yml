@@ -104,7 +104,7 @@ steps:
     Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"    
 
     # Is this still needed?
-    Copy-Item backend.tf.sample backend.tf
+    # Copy-Item backend.tf.sample backend.tf
   name: terraformConfig
   displayName: 'Prepare Terraform config'
   workingDirectory: '$(terraformDirectory)'
@@ -167,7 +167,7 @@ steps:
 - bash: |
     echo 'aks_name is $(TF_OUT_AKS_NAME)'
     echo 'resource_group is $(TF_OUT_RESOURCE_GROUP)'
-    displayName: echo tf output vars
+  displayName: echo tf output vars
 
 - task: TerraformCLI@0
   displayName: 'Terraform destroy'
