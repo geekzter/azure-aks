@@ -43,8 +43,7 @@ schedules:
     - main
 
 variables:
-- group: 'aks-test'
-# - group: 'aks-ci'
+- group: 'aks-ci'
 - group: 'pipeline'
 
 - name: 'jobTimeOutMinutes'
