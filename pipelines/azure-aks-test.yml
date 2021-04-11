@@ -94,6 +94,9 @@ steps:
 
       Write-Host "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
     } 
+    (Get-Content ci.auto.tfvars) -replace "`"false`"","false" | Out-File ci.auto.tfvars -Force
+    (Get-Content ci.auto.tfvars) -replace "`"true`"","true" | Out-File ci.auto.tfvars -Force
+
     Write-Host "Contents of ci.auto.tfvars:"
     Get-Content ci.auto.tfvars
 
