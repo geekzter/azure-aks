@@ -19,8 +19,13 @@ output firewall_fqdn {
 # }
 
 output kube_config {
-  sensitive   = true
+  # sensitive   = true
   value       = var.deploy_aks ? module.aks.0.kube_config : null
+}
+
+output kube_config_base64 {
+  sensitive   = true
+  value       = var.deploy_aks ? base64encode(module.aks.0.kube_config) : null
 }
 
 output kube_config_path {
@@ -33,7 +38,7 @@ output kubernetes_api_server_ip_address {
 
 output kubernetes_client_certificate {
   sensitive   = true
-  value       = var.deploy_aks ? module.aks.0.kubernetes_client_certificate : null
+  value       = var.deploy_aks ? chomp(module.aks.0.kubernetes_client_certificate) : null
 }
 
 output kubernetes_host {
