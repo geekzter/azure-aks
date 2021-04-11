@@ -136,23 +136,23 @@ steps:
     allowTelemetryCollection: true
     publishPlanResults: 'ci'
 
-# - task: TerraformCLI@0
-#   displayName: 'Terraform apply'
-#   inputs:
-#     command: 'apply'
-#     workingDirectory: '$(terraformDirectory)'
-#     environmentServiceName: '$(subscriptionConnection)'
-#     runAzLogin: true
-#     allowTelemetryCollection: true
+- task: TerraformCLI@0
+  displayName: 'Terraform apply'
+  inputs:
+    command: 'apply'
+    workingDirectory: '$(terraformDirectory)'
+    environmentServiceName: '$(subscriptionConnection)'
+    runAzLogin: true
+    allowTelemetryCollection: true
 
-# - task: TerraformCLI@0
-#   displayName: 'Terraform destroy'
-#   inputs:
-#     command: 'destroy'
-#     workingDirectory: '$(terraformDirectory)'
-#     environmentServiceName: '$(subscriptionConnection)'
-#     runAzLogin: true
-#     allowTelemetryCollection: true
+- task: TerraformCLI@0
+  displayName: 'Terraform destroy'
+  inputs:
+    command: 'destroy'
+    workingDirectory: '$(terraformDirectory)'
+    environmentServiceName: '$(subscriptionConnection)'
+    runAzLogin: true
+    allowTelemetryCollection: true
     
 - pwsh: |
     Remove-Item $(terraformDirectory)/ci.auto.tfvars -Force
