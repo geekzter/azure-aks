@@ -141,7 +141,7 @@ jobs:
           workingDirectory: '$(terraformDirectory)'
 
     - task: AzureCLI@2
-      displayName: 'Terraform apply'
+      displayName: 'Apply infrastructure with Terraform'
       name: apply
       inputs:
         azureSubscription: '$(subscriptionConnection)'
@@ -205,8 +205,9 @@ jobs:
         kubectlVersion: 'latest'
 
     - task: Kubernetes@1
-      displayName: 'Deploy ASP.NET App manifest'
+      displayName: 'Apply ASP.NET App manifest with kubectl'
       inputs:
+        connectionType: 'Azure Resource Manager'
         azureSubscriptionEndpoint: '$(subscriptionConnection)'
         azureResourceGroup: '$(apply.resource_group)'
         kubernetesCluster: '$(apply.aks_name)'
@@ -215,10 +216,23 @@ jobs:
         useConfigurationFile: true
         configuration: '$(manifestDirectory)/aspnetapp.yaml'
         secretType: 'generic'
+        
+    - task: Kubernetes@1
+      displayName: 'Apply Voting App manifest with kubectl'
+      inputs:
+        connectionType: 'Azure Resource Manager'
+        azureSubscriptionEndpoint: '$(subscriptionConnection)'
+        azureResourceGroup: '$(apply.resource_group)'
+        kubernetesCluster: '$(apply.aks_name)'
+        useClusterAdmin: true
+        command: 'apply'
+        useConfigurationFile: true
+        configuration: '$(manifestDirectory)/internal-vote.yaml'
+        secretType: 'generic'
 
     - ${{ if eq(parameters.deploy, true) }}:
       - task: AzureCLI@2
-        displayName: 'Deploy applications'
+        displayName: 'Test applications'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
@@ -243,7 +257,7 @@ jobs:
 
     - ${{ if eq(parameters.destroy, true) }}:
       - task: AzureCLI@2
-        displayName: 'Terraform destroy'
+        displayName: 'Destroy infrastructure with Terraform'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
