@@ -5,6 +5,8 @@
 
 
 variables:
+- group: aks-ci
+- group: pipeline
 - name: AZURE_EXTENSION_USE_DYNAMIC_INSTALL
   value: 'yes_without_prompt'
 - name: 'TF_IN_AUTOMATION'
@@ -94,10 +96,10 @@ steps:
     command: 'init'
     workingDirectory: '$(terraformDirectory)'
     backendType: 'azurerm'
-    backendServiceArm: 'internal-azure-subscription'
-    backendAzureRmResourceGroupName: 'Automation'
-    backendAzureRmStorageAccountName: 'ewterraformstate'
-    backendAzureRmContainerName: 'aks'
+    backendServiceArm: '$(subscriptionConnection)'
+    backendAzureRmResourceGroupName: '$(TF_STATE_RESOURCE_GROUP_NAME)'
+    backendAzureRmStorageAccountName: '$(TF_STATE_STORAGE_ACCOUNT_NAME)'
+    backendAzureRmContainerName: '$(TF_STATE_CONTAINER_NAME)'
     backendAzureRmKey: 'terraform.tfstate'
     allowTelemetryCollection: true
 
@@ -113,7 +115,7 @@ steps:
   inputs:
     command: 'plan'
     workingDirectory: '$(terraformDirectory)'
-    environmentServiceName: 'internal-azure-subscription'
+    environmentServiceName: '$(subscriptionConnection)'
     runAzLogin: true
     allowTelemetryCollection: true
     publishPlanResults: 'ci'
