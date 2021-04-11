@@ -15,7 +15,7 @@ variables:
 - name: 'TF_INPUT'
   value: 0
 - name: 'TF_WORKSPACE'
-  value: 'ci2'
+  value: 'ci3'
 - name: 'manifestDirectory'
   value: '$(Build.SourcesDirectory)/manifests'
 - name: 'scriptDirectory'
