@@ -140,6 +140,19 @@ jobs:
           failOnStandardError: true
           workingDirectory: '$(terraformDirectory)'
 
+    - task: TerraformCLI@0
+      displayName: 'Terraform init'
+      inputs:
+        command: 'init'
+        workingDirectory: '$(terraformDirectory)'
+        backendType: 'azurerm'
+        backendServiceArm: '$(subscriptionConnection)'
+        backendAzureRmResourceGroupName: '$(TF_STATE_RESOURCE_GROUP_NAME)'
+        backendAzureRmStorageAccountName: '$(TF_STATE_STORAGE_ACCOUNT_NAME)'
+        backendAzureRmContainerName: '$(TF_STATE_CONTAINER_NAME)'
+        backendAzureRmKey: 'terraform.tfstate'
+        allowTelemetryCollection: true
+
     - task: AzureCLI@2
       displayName: 'Apply infrastructure with Terraform'
       name: apply
@@ -170,14 +183,9 @@ jobs:
           } 
           # List environment variables
           Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
-          Copy-Item backend.tf.sample backend.tf
 
           # Run Terraform
           terraform version
-          terraform init -reconfigure `
-                         -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP_NAME)" `
-                         -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT_NAME)" `
-                         -backend-config="container_name=$(TF_STATE_CONTAINER_NAME)" 
           terraform apply -auto-approve
 
           # Export Terraform output as task output
@@ -193,11 +201,6 @@ jobs:
         failOnStandardError: true
         powerShellIgnoreLASTEXITCODE: false
         workingDirectory: '$(terraformDirectory)'
-
-    - pwsh: |
-        # List environment variables
-        Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
-      displayName: 'List environment variables'
 
     - task: KubectlInstaller@0
       displayName: 'Install kubectl'
