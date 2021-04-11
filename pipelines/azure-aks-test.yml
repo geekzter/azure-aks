@@ -84,12 +84,11 @@ steps:
     Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
 
     # Convert uppercased Terraform environment variables to .auto.tfvars file
-    $varArgs = "-var"
     foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
       $terraformVariableName = $tfvar.Name.Substring(7).ToLowerInvariant()
       $terraformVariableValue = $tfVar.Value
 
-      $varArgs += " '${terraformVariableName}=${terraformVariableValue}'"
+      $varArgs += " -var '${terraformVariableName}=${terraformVariableValue}'"
       #Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
     } 
     #(Get-Content ci.auto.tfvars) -replace "`"false`"","false" | Out-File ci.auto.tfvars -Force
