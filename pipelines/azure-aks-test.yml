@@ -92,7 +92,7 @@ steps:
       $terraformVariableName = $tfvar.Name.Substring(7).ToLowerInvariant()
       $terraformVariableValue = $tfVar.Value
 
-      Write-Host "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
+      Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
     } 
     (Get-Content ci.auto.tfvars) -replace "`"false`"","false" | Out-File ci.auto.tfvars -Force
     (Get-Content ci.auto.tfvars) -replace "`"true`"","true" | Out-File ci.auto.tfvars -Force
