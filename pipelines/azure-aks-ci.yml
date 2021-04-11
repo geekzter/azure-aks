@@ -228,7 +228,7 @@ jobs:
 
     - ${{ if eq(parameters.deploy, true) }}:
       - task: AzureCLI@2
-      condition: and(succeeded(), not(eq('variables['TF_OUT_AKS_NAME']','')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+        condition: and(succeeded(), not(eq('variables['TF_OUT_AKS_NAME']','')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
         displayName: 'Test applications'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
