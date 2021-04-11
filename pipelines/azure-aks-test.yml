@@ -79,10 +79,6 @@ steps:
 #     configuration: '$(Build.SourcesDirectory)/manifests/internal-vote.yaml'
 #     secretType: 'generic'
 
-- task: TerraformInstaller@0
-  inputs:
-    terraformVersion: '0.14.10'
-
 - pwsh: |
     # List environment variables
     Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
@@ -94,21 +90,30 @@ steps:
       $terraformVariableValue = $tfVar.Value
 
       $varArgs += " '${terraformVariableName}=${terraformVariableValue}'"
-      Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
+      #Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
     } 
     (Get-Content ci.auto.tfvars) -replace "`"false`"","false" | Out-File ci.auto.tfvars -Force
     (Get-Content ci.auto.tfvars) -replace "`"true`"","true" | Out-File ci.auto.tfvars -Force
 
     Write-Host "Contents of ci.auto.tfvars:"
-    Get-Content ci.auto.tfvars
+    #Get-Content ci.auto.tfvars
 
     Write-Host "Terraform plan/apply options: ${varArgs}"
+    Write-Host "##vso[task.setvariable variable=variableOption;isOutput=true]$varArgs"
+
+    $terraformVersion = (Get-Content .terraform-version)
+    Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"    
 
     # Is this still needed?
     Copy-Item backend.tf.sample backend.tf
     terraform version
+  name: terraformConfig
   displayName: 'Prepare Terraform config'
   workingDirectory: '$(terraformDirectory)'
+
+- task: TerraformInstaller@0
+  inputs:
+    terraformVersion: '0.14.10'
 
 - task: TerraformCLI@0
   displayName: 'Terraform init'
@@ -137,6 +142,7 @@ steps:
     workingDirectory: '$(terraformDirectory)'
     environmentServiceName: '$(subscriptionConnection)'
     runAzLogin: true
+    commandOptions: '$(terraformConfig.variableOption)'
     allowTelemetryCollection: true
     publishPlanResults: 'ci'
 
