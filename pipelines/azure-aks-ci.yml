@@ -200,7 +200,7 @@ jobs:
 
     - task: Kubernetes@1
       displayName: 'kubectl apply: ASP.NET App'
-      condition: and(succeeded(), not(eq('$(TF_VAR_deploy_aks)'),''), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+      condition: and(succeeded(), not(eq('variables['TF_OUT_AKS_NAME']','')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
       inputs:
         connectionType: 'Azure Resource Manager'
         azureSubscriptionEndpoint: '$(subscriptionConnection)'
@@ -214,7 +214,7 @@ jobs:
         
     - task: Kubernetes@1
       displayName: 'kubectl apply: Voting App'
-      condition: and(succeeded(), not(eq('$(TF_VAR_deploy_aks)'),''), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+      condition: and(succeeded(), not(eq('variables['TF_OUT_AKS_NAME']','')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
       inputs:
         connectionType: 'Azure Resource Manager'
         azureSubscriptionEndpoint: '$(subscriptionConnection)'
@@ -228,7 +228,7 @@ jobs:
 
     - ${{ if eq(parameters.deploy, true) }}:
       - task: AzureCLI@2
-        condition: and(succeeded(), not(eq('$(TF_VAR_deploy_aks)'),''), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+      condition: and(succeeded(), not(eq('variables['TF_OUT_AKS_NAME']','')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
         displayName: 'Test applications'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
