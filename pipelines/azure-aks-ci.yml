@@ -115,6 +115,9 @@ jobs:
           workingDirectory: '$(terraformDirectory)'
 
     - pwsh: |
+        # Use pipeline agent VNet as network to peer from
+        $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
+
         # List environment variables
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
 
@@ -195,6 +198,7 @@ jobs:
 
     - task: KubectlInstaller@0
       displayName: 'Install kubectl'
+      condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
       inputs:
         kubectlVersion: 'latest'
 
