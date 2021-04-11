@@ -106,7 +106,6 @@ steps:
 
     # Is this still needed?
     Copy-Item backend.tf.sample backend.tf
-    terraform version
   name: terraformConfig
   displayName: 'Prepare Terraform config'
   workingDirectory: '$(terraformDirectory)'
