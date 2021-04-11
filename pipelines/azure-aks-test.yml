@@ -1,0 +1,119 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+
+variables:
+- name: AZURE_EXTENSION_USE_DYNAMIC_INSTALL
+  value: 'yes_without_prompt'
+- name: 'TF_IN_AUTOMATION'
+  value: 'true'
+- name: 'TF_INPUT'
+  value: 0
+- name: 'TF_WORKSPACE'
+  value: 'ci1'
+- name: 'manifestDirectory'
+  value: '$(Build.SourcesDirectory)/manifests'
+- name: 'scriptDirectory'
+  value: '$(Build.SourcesDirectory)/scripts'
+- name: 'terraformDirectory'
+  value: '$(Build.SourcesDirectory)/terraform'
+
+pool:
+  name: 'Scale Set Agents 1'
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- script: |
+    echo Add other tasks to build, test, and deploy your project.
+    echo See https://aka.ms/yaml
+  displayName: 'Run a multi-line script'
+
+- task: KubectlInstaller@0
+  displayName: 'Install kubectl'
+  inputs:
+    kubectlVersion: 'latest'
+
+# - task: Kubernetes@1
+#   displayName: 'Deploy ASP.NET App manifest'
+#   inputs:
+#     azureSubscriptionEndpoint: '$(subscriptionConnection)'
+#     azureResourceGroup: '$(apply.resource_group)'
+#     kubernetesCluster: '$(apply.aks_name)'
+#     useClusterAdmin: true
+#     command: 'apply'
+#     useConfigurationFile: true
+#     configuration: '$(manifestDirectory)/aspnetapp.yaml'
+#     secretType: 'generic'
+
+# - task: Kubernetes@1
+#   displayName: 'Apply ASP.NET App manifest'
+#   inputs:
+#     connectionType: 'Azure Resource Manager'
+#     azureSubscriptionEndpoint: 'internal-azure-subscription'
+#     azureResourceGroup: 'k8s-ci-ztzc'
+#     kubernetesCluster: 'aks-ci-ztzc'
+#     useClusterAdmin: true
+#     command: 'apply'
+#     useConfigurationFile: true
+#     configuration: '$(Build.SourcesDirectory)/manifests/aspnetapp.yaml'
+#     secretType: 'generic'
+    
+# - task: Kubernetes@1
+#   displayName: 'Apply Voting App manifest'
+#   inputs:
+#     connectionType: 'Azure Resource Manager'
+#     azureSubscriptionEndpoint: 'internal-azure-subscription'
+#     azureResourceGroup: 'k8s-ci-ztzc'
+#     kubernetesCluster: 'aks-ci-ztzc'
+#     useClusterAdmin: true
+#     command: 'apply'
+#     useConfigurationFile: true
+#     configuration: '$(Build.SourcesDirectory)/manifests/internal-vote.yaml'
+#     secretType: 'generic'
+
+- task: TerraformInstaller@0
+  inputs:
+    terraformVersion: '0.14.10'
+
+- pwsh: |
+    # List environment variables
+    Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
+    Copy-Item backend.tf.sample backend.tf
+    terraform version
+  displayName: 'Prepare Terraform config'
+  workingDirectory: '$(terraformDirectory)'
+
+- task: TerraformCLI@0
+  displayName: 'Terraform init'
+  inputs:
+    command: 'init'
+    workingDirectory: '$(terraformDirectory)'
+    backendType: 'azurerm'
+    backendServiceArm: 'internal-azure-subscription'
+    backendAzureRmResourceGroupName: 'Automation'
+    backendAzureRmStorageAccountName: 'ewterraformstate'
+    backendAzureRmContainerName: 'aks'
+    allowTelemetryCollection: true
+
+- task: TerraformCLI@0
+  displayName: 'Terraform validate'
+  inputs:
+    command: 'validate'
+    workingDirectory: '$(terraformDirectory)'
+    allowTelemetryCollection: true
+
+- task: TerraformCLI@0
+  displayName: 'Terraform plan'
+  inputs:
+    command: 'plan'
+    workingDirectory: '$(terraformDirectory)'
+    environmentServiceName: 'internal-azure-subscription'
+    runAzLogin: true
+    allowTelemetryCollection: true
+    publishPlanResults: 'ci'
+
