@@ -253,7 +253,7 @@ jobs:
           powerShellIgnoreLASTEXITCODE: false
           workingDirectory: '$(scriptDirectory)'
         env:
-          KUBECONFIG: '$(apply.kube_config_path)'
+          KUBECONFIG: variables['KUBE_CONFIG_PATH']
 
     - ${{ if eq(parameters.destroy, true) }}:
       - task: TerraformCLI@0
