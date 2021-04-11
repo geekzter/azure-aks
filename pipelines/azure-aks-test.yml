@@ -87,14 +87,12 @@ steps:
     # List environment variables
     Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
 
-    # Convert uppercased Terraform environment variables to their original casing expeted by Terraform
+    # Convert uppercased Terraform environment variables to .auto.tfvars file
     foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
-      $upperCaseName = $tfvar.Name + "_UC"
       $terraformVariableName = $tfvar.Name.Substring(7).ToLowerInvariant()
-      $properCaseName = $tfvar.Name.Substring(0,7) + $terraformVariableName
       $terraformVariableValue = $tfVar.Value
 
-      Write-Host "$terraformVariableName = `"$terraformVariableValue`" | Out-File ci.auto.tfvars -Append -Force
+      Write-Host "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
     } 
     Write-Host "Contents of ci.auto.tfvars:"
     Get-Content ci.auto.tfvars
