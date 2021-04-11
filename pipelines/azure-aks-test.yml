@@ -111,7 +111,7 @@ steps:
 
 - task: TerraformInstaller@0
   inputs:
-    terraformVersion: '0.14.10'
+    terraformVersion: '$(terraformConfig.version)'
 
 - task: TerraformCLI@0
   displayName: 'Terraform init'
@@ -144,14 +144,29 @@ steps:
     allowTelemetryCollection: true
     publishPlanResults: 'ci'
 
-# - task: TerraformCLI@0
-#   displayName: 'Terraform apply'
-#   inputs:
-#     command: 'apply'
-#     workingDirectory: '$(terraformDirectory)'
-#     environmentServiceName: '$(subscriptionConnection)'
-#     runAzLogin: true
-#     allowTelemetryCollection: true
+- task: TerraformCLI@0
+  displayName: 'Terraform apply'
+  inputs:
+    command: 'apply'
+    workingDirectory: '$(terraformDirectory)'
+    environmentServiceName: '$(subscriptionConnection)'
+    runAzLogin: true
+    commandOptions: '$(terraformConfig.variableOption)'
+    allowTelemetryCollection: true
+
+- task: TerraformCLI@0
+  displayName: 'Terraform output'
+  inputs:
+    command: 'apply'
+    workingDirectory: '$(terraformDirectory)'
+    environmentServiceName: '$(subscriptionConnection)'
+    runAzLogin: true
+    allowTelemetryCollection: true
+
+- bash: |
+    echo 'aks_name is $(TF_OUT_AKS_NAME)'
+    echo 'resource_group is $(TF_OUT_RESOURCE_GROUP)'
+    displayName: echo tf output vars
 
 - task: TerraformCLI@0
   displayName: 'Terraform destroy'
