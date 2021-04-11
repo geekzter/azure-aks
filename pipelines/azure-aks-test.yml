@@ -88,10 +88,12 @@ steps:
     Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
 
     # Convert uppercased Terraform environment variables to .auto.tfvars file
+    $varArgs = "-var"
     foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
       $terraformVariableName = $tfvar.Name.Substring(7).ToLowerInvariant()
       $terraformVariableValue = $tfVar.Value
 
+      $varArgs += " '${terraformVariableName}=${terraformVariableValue}'"
       Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
     } 
     (Get-Content ci.auto.tfvars) -replace "`"false`"","false" | Out-File ci.auto.tfvars -Force
@@ -99,6 +101,8 @@ steps:
 
     Write-Host "Contents of ci.auto.tfvars:"
     Get-Content ci.auto.tfvars
+
+    Write-Host "Terraform plan/apply options: ${varArgs}"
 
     # Is this still needed?
     Copy-Item backend.tf.sample backend.tf
@@ -136,14 +140,14 @@ steps:
     allowTelemetryCollection: true
     publishPlanResults: 'ci'
 
-- task: TerraformCLI@0
-  displayName: 'Terraform apply'
-  inputs:
-    command: 'apply'
-    workingDirectory: '$(terraformDirectory)'
-    environmentServiceName: '$(subscriptionConnection)'
-    runAzLogin: true
-    allowTelemetryCollection: true
+# - task: TerraformCLI@0
+#   displayName: 'Terraform apply'
+#   inputs:
+#     command: 'apply'
+#     workingDirectory: '$(terraformDirectory)'
+#     environmentServiceName: '$(subscriptionConnection)'
+#     runAzLogin: true
+#     allowTelemetryCollection: true
 
 - task: TerraformCLI@0
   displayName: 'Terraform destroy'
