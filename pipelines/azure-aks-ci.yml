@@ -111,8 +111,6 @@ jobs:
     displayName: 'Provision & Destroy (${{ lower(parameters.destroy) }})'
   ${{ if and(eq(parameters.destroy, 'On success'),not(parameters.deploy)) }}:
     displayName: 'Provision & Destroy (${{ lower(parameters.destroy) }})'
-
-  displayName: 'Provision'
   condition: succeeded()
   timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
 
