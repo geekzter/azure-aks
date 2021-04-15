@@ -18,8 +18,13 @@ parameters:
   default: true
 - name: destroy
   displayName: Destroy infrastructure
-  type: boolean
-  default: true
+  type: string
+  default: Always
+  values:
+  - Always
+  - Never 
+  - 'On failure'
+  - 'On success'
 
 trigger: none
 
@@ -50,6 +55,65 @@ variables:
   value: 180
 - name: 'repository'
   value: 'azure-aks'
+
+
+- name: destroyOnFailure
+  ${{ if eq(parameters.destroy, 'Always') }}:
+    value: true
+  ${{ if eq(parameters.destroy, 'Never') }}:
+    value: false
+  ${{ if eq(parameters.destroy, 'On failure') }}:
+    value: true
+  ${{ if eq(parameters.destroy, 'On success') }}:
+    value: false
+- name: destroyOnSuccess
+  ${{ if eq(parameters.destroy, 'Always') }}:
+    value: true
+  ${{ if eq(parameters.destroy, 'Never') }}:
+    value: false
+  ${{ if eq(parameters.destroy, 'On failure') }}:
+    value: false
+  ${{ if eq(parameters.destroy, 'On success') }}:
+    value: true
+
+
+
+# - ${{ if eq(parameters.destroy, 'Always') }}:
+#   - name: destroyAlways
+#     value: true
+#   - name: destroyNever
+#     value: false
+#   - name: destroyOnFailure
+#     value: true
+#   - name: destroyOnSuccess
+#     value: true
+# - ${{ if eq(parameters.destroy, 'Never') }}:
+#   - name: destroyAlways
+#     value: false
+#   - name: destroyNever
+#     value: true
+#   - name: destroyOnFailure
+#     value: false
+#   - name: destroyOnSuccess
+#     value: false
+# - ${{ if eq(parameters.destroy, 'On failure') }}:
+#   - name: destroyAlways
+#     value: false
+#   - name: destroyNever
+#     value: false
+#   - name: destroyOnFailure
+#     value: true
+#   - name: destroyOnSuccess
+#     value: false
+# - ${{ if eq(parameters.destroy, 'On success') }}:
+#   - name: destroyAlways
+#     value: false
+#   - name: destroyNever
+#     value: false
+#   - name: destroyOnFailure
+#     value: false
+#   - name: destroyOnSuccess
+#     value: true
 
 - name: AZURE_EXTENSION_USE_DYNAMIC_INSTALL
   value: 'yes_without_prompt'
@@ -255,9 +319,15 @@ jobs:
         env:
           KUBECONFIG: variables['KUBE_CONFIG_PATH']
 
-    - ${{ if eq(parameters.destroy, true) }}:
+    - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - task: TerraformCLI@0
         displayName: 'Terraform destroy'
+        ${{ if eq(parameters.destroy, 'Always') }}:
+          condition: succeededOrFailed()
+        ${{ if eq(parameters.destroy, 'On failure') }}:
+          condition: failed()
+        ${{ if eq(parameters.destroy, 'On success') }}:
+          condition: succeeded()
         inputs:
           command: 'destroy'
           workingDirectory: '$(terraformDirectory)'
@@ -265,12 +335,35 @@ jobs:
           runAzLogin: true
           allowTelemetryCollection: true
 
-    - ${{ if eq(parameters.destroy, true) }}:
+
+- ${{ if ne(parameters.destroy, 'Never') }}:
+  # Clean up resources, in the event 'terraform destroy' fails   
+  - job: 'Tear down'
+    dependsOn:
+      - Provision
+    displayName: 'Tear down & Clean up'
+    # Run if Terraform destroy failed, or the whole pipeline was canceled
+    # condition: or(and(ne(dependencies.Provision.result, 'None'),ne(dependencies.Provision.result, 'Skipped'),ne(dependencies.Provision.result, 'Succeeded')), and(canceled(),variables.destroyOnFailure))
+    condition: or(and(canceled(),variables.destroyOnFailure), and(failed(),variables.destroyOnFailure), and(succeeded(),variables.destroyOnSuccess))
+    timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
+
+    variables:
+      # Use earlier prepared Terraform config
+      terraformVersion: $[ dependencies.Provision.outputs['terraformConfig.version'] ]
+
+    pool:
+      name: '$(pool)'
+      vmImage: $(vmImage)
+
+    workspace:
+      clean: all
+
+    steps:
+    - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - task: AzureCLI@2
         name: teardown
         displayName: 'Tear down remaining resources'
         condition: always()
-        enabled: ${{ parameters.destroy }}
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
@@ -294,7 +387,6 @@ jobs:
             }
 
             # Remove (remaining) resources
-            $ErrorActionPreference = "Stop" # Don't clear workspace if next step fails
             $resourceIDs = $(az resource list --query "${tagQuery}" -o tsv)
             if ($resourceIDs) {
               Write-Host "Removing resources `"${resourceIDs}`"..."
@@ -306,6 +398,51 @@ jobs:
               Write-Host "No resources to remove"
             }
 
+            # Remove VNet peerings
+            if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
+              $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
+              if ($peeringIDs) {
+                Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
+                &{ # az writes information to stderr
+                  $ErrorActionPreference = 'SilentlyContinue'
+                  az resource delete --ids $peeringIDs 2>&1
+                }
+              } else {
+                Write-Host "No virtual network peerings to remove"
+              }
+            }
+          addSpnToEnvironment: true
+          useGlobalConfig: true
+          failOnStandardError: true
+          workingDirectory: '$(terraformDirectory)'
+
+      - task: TerraformInstaller@0
+        displayName: 'Install terraform'
+        inputs:
+          terraformVersion: '$(terraformConfig.version)'
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform init'
+        inputs:
+          command: 'init'
+          workingDirectory: '$(terraformDirectory)'
+          backendType: 'azurerm'
+          backendServiceArm: '$(subscriptionConnection)'
+          backendAzureRmResourceGroupName: '$(TF_STATE_RESOURCE_GROUP_NAME)'
+          backendAzureRmStorageAccountName: '$(TF_STATE_STORAGE_ACCOUNT_NAME)'
+          backendAzureRmContainerName: '$(TF_STATE_CONTAINER_NAME)'
+          backendAzureRmKey: 'terraform.tfstate'
+          allowTelemetryCollection: true
+
+      - task: AzureCLI@2
+        name: cleanup
+        displayName: 'Clean up Terraform state'
+        condition: always()
+        inputs:
+          azureSubscription: '$(subscriptionConnection)'
+          scriptType: pscore
+          scriptLocation: inlineScript
+          inlineScript: |
             # Remove VNet peerings
             if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
               $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
