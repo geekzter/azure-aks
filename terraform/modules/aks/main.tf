@@ -108,7 +108,10 @@ resource azurerm_kubernetes_cluster aks {
 
   identity {
     type                       = "UserAssigned"
-    user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
+    # BUG:  https://github.com/terraform-providers/terraform-provider-azurerm/issues/10406
+    # user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
+    # HACK: https://github.com/terraform-providers/terraform-provider-azurerm/issues/10406#issuecomment-820198428
+    user_assigned_identity_id  = replace(azurerm_user_assigned_identity.aks_identity.id,"resourceGroups","resourcegroups")
   }
 
   network_profile {
