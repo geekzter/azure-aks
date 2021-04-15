@@ -49,7 +49,6 @@ schedules:
 
 variables:
 - group: 'aks-ci'
-- group: 'pipeline'
 - name: destroyOnFailure
   ${{ if eq(parameters.destroy, 'Always') }}:
     value: true
