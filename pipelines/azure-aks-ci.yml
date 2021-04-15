@@ -278,7 +278,7 @@ jobs:
 
     - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - task: TerraformCLI@0
-        displayName: 'Terraform destroy'
+        displayName: 'Terraform destroy (${{ lower(parameters.destroy) }})'
         ${{ if eq(parameters.destroy, 'Always') }}:
           condition: succeededOrFailed()
         ${{ if eq(parameters.destroy, 'On failure') }}:
@@ -298,7 +298,7 @@ jobs:
   - job: 'Teardown'
     dependsOn:
       - Provision
-    displayName: 'Tear down & Clean up (${{ parameters.destroy }})'
+    displayName: 'Tear down & Clean up (${{ lower(parameters.destroy) }})'
     # Run if Terraform destroy failed, or the whole pipeline was canceled
     # condition: or(and(ne(dependencies.Provision.result, 'None'),ne(dependencies.Provision.result, 'Skipped'),ne(dependencies.Provision.result, 'Succeeded')), and(canceled(),variables.destroyOnFailure))
     condition: or(and(canceled(),variables.destroyOnFailure), and(failed(),variables.destroyOnFailure), and(succeeded(),variables.destroyOnSuccess))
