@@ -419,7 +419,7 @@ jobs:
       - task: TerraformInstaller@0
         displayName: 'Install terraform'
         inputs:
-          terraformVersion: '$(terraformConfig.version)'
+          terraformVersion: '$(terraformVersion)'
 
       - task: TerraformCLI@0
         displayName: 'Terraform init'
