@@ -390,7 +390,6 @@ jobs:
       - task: AzureCLI@2
         name: teardown
         displayName: 'Tear down remaining resources'
-        condition: always()
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
@@ -464,7 +463,7 @@ jobs:
       - task: AzureCLI@2
         name: cleanup
         displayName: 'Clean up Terraform state'
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
