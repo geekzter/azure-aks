@@ -33,13 +33,13 @@ resource azurerm_subnet iag_subnet {
   name                         = "AzureFirewallSubnet"
   virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = data.azurerm_resource_group.rg.name
-  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],12,0)]
+  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],10,0)]
 }
 resource azurerm_subnet waf_subnet {
   name                         = "ApplicationGatewaySubnet"
   virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = data.azurerm_resource_group.rg.name
-  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],12,1)]
+  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],10,1)]
 }
 
 resource azurerm_subnet subnet {
