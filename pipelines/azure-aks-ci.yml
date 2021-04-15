@@ -189,7 +189,6 @@ jobs:
       - task: AzureCLI@2
         name: cleanup
         displayName: 'Clear Terraform state'
-        condition: always()
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
