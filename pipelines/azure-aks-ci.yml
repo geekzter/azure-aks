@@ -338,7 +338,7 @@ jobs:
 
 - ${{ if ne(parameters.destroy, 'Never') }}:
   # Clean up resources, in the event 'terraform destroy' fails   
-  - job: 'Tear down'
+  - job: 'Teardown'
     dependsOn:
       - Provision
     displayName: 'Tear down & Clean up'
