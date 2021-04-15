@@ -16,7 +16,7 @@ function Get-Tools() {
 
 function Get-LoadBalancerIPAddress(
     [parameter(Mandatory=$true)][string]$KubernetesService,
-    [parameter(Mandatory=$false)][int]$MaxTests=1200
+    [parameter(Mandatory=$false)][int]$MaxTests=600
 ) {
     $ilb = (kubectl get service azure-vote-front -o=jsonpath='{.status.loadBalancer}' | ConvertFrom-Json)
     if (!$ilb) {
@@ -116,7 +116,7 @@ function Test-App (
             if ($test -ge $MaxTests) {
                 throw
             } else {
-                Start-Sleep -Milliseconds 500
+                Start-Sleep -Milliseconds 1000
             }
         }
     }
