@@ -152,6 +152,9 @@ jobs:
         # Use pipeline agent VNet as network to peer from
         $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
 
+        # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
+        $env:TF_VAR_address_space = "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/12"
+
         # List environment variables
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
 
