@@ -95,6 +95,23 @@ variables:
 
 jobs:
 - job: 'Provision'
+  ${{ if and(eq(parameters.destroy, 'Always'),parameters.deploy) }}:
+    displayName: 'Provision, Deploy, Test & Destroy'
+  ${{ if and(eq(parameters.destroy, 'Never'),parameters.deploy) }}:
+    displayName: 'Provision, Deploy & Test'
+  ${{ if and(eq(parameters.destroy, 'On failure'),parameters.deploy) }}:
+    displayName: 'Provision, Deploy, Test & Destroy (${{ lower(parameters.destroy) }})'
+  ${{ if and(eq(parameters.destroy, 'On success'),parameters.deploy) }}:
+    displayName: 'Provision, Deploy, Test & Destroy (${{ lower(parameters.destroy) }})'
+  ${{ if and(eq(parameters.destroy, 'Always'),not(parameters.deploy)) }}:
+    displayName: 'Provision & Destroy'
+  ${{ if and(eq(parameters.destroy, 'Never'),not(parameters.deploy)) }}:
+    displayName: 'Provision'
+  ${{ if and(eq(parameters.destroy, 'On failure'),not(parameters.deploy)) }}:
+    displayName: 'Provision & Destroy (${{ lower(parameters.destroy) }})'
+  ${{ if and(eq(parameters.destroy, 'On success'),not(parameters.deploy)) }}:
+    displayName: 'Provision & Destroy (${{ lower(parameters.destroy) }})'
+
   displayName: 'Provision'
   condition: succeeded()
   timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
@@ -248,39 +265,42 @@ jobs:
         runAzLogin: true
         allowTelemetryCollection: true
 
-    - task: KubectlInstaller@0
-      displayName: 'Install kubectl'
-      condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
-      inputs:
-        kubectlVersion: 'latest'
+    - ${{ if eq(parameters.deploy, true) }}:
+      - task: KubectlInstaller@0
+        displayName: 'Install kubectl'
+        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+        inputs:
+          kubectlVersion: 'latest'
 
-    - task: Kubernetes@1
-      displayName: 'kubectl apply: ASP.NET App'
-      condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
-      inputs:
-        connectionType: 'Azure Resource Manager'
-        azureSubscriptionEndpoint: '$(subscriptionConnection)'
-        azureResourceGroup: '$(TF_OUT_RESOURCE_GROUP)'
-        kubernetesCluster: '$(TF_OUT_AKS_NAME)'
-        useClusterAdmin: true
-        command: 'apply'
-        useConfigurationFile: true
-        configuration: '$(manifestDirectory)/aspnetapp.yaml'
-        secretType: 'generic'
+    - ${{ if eq(parameters.deploy, true) }}:
+      - task: Kubernetes@1
+        displayName: 'kubectl apply: ASP.NET App'
+        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+        inputs:
+          connectionType: 'Azure Resource Manager'
+          azureSubscriptionEndpoint: '$(subscriptionConnection)'
+          azureResourceGroup: '$(TF_OUT_RESOURCE_GROUP)'
+          kubernetesCluster: '$(TF_OUT_AKS_NAME)'
+          useClusterAdmin: true
+          command: 'apply'
+          useConfigurationFile: true
+          configuration: '$(manifestDirectory)/aspnetapp.yaml'
+          secretType: 'generic'
         
-    - task: Kubernetes@1
-      displayName: 'kubectl apply: Voting App'
-      condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
-      inputs:
-        connectionType: 'Azure Resource Manager'
-        azureSubscriptionEndpoint: '$(subscriptionConnection)'
-        azureResourceGroup: '$(TF_OUT_RESOURCE_GROUP)'
-        kubernetesCluster: '$(TF_OUT_AKS_NAME)'
-        useClusterAdmin: true
-        command: 'apply'
-        useConfigurationFile: true
-        configuration: '$(manifestDirectory)/internal-vote.yaml'
-        secretType: 'generic'
+    - ${{ if eq(parameters.deploy, true) }}:
+      - task: Kubernetes@1
+        displayName: 'kubectl apply: Voting App'
+        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+        inputs:
+          connectionType: 'Azure Resource Manager'
+          azureSubscriptionEndpoint: '$(subscriptionConnection)'
+          azureResourceGroup: '$(TF_OUT_RESOURCE_GROUP)'
+          kubernetesCluster: '$(TF_OUT_AKS_NAME)'
+          useClusterAdmin: true
+          command: 'apply'
+          useConfigurationFile: true
+          configuration: '$(manifestDirectory)/internal-vote.yaml'
+          secretType: 'generic'
 
     - ${{ if eq(parameters.deploy, true) }}:
       - task: AzureCLI@2
@@ -332,8 +352,12 @@ jobs:
       - Provision
     displayName: 'Tear down & Clean up (${{ lower(parameters.destroy) }})'
     # Run if Terraform destroy failed, or the whole pipeline was canceled
-    # condition: or(and(ne(dependencies.Provision.result, 'None'),ne(dependencies.Provision.result, 'Skipped'),ne(dependencies.Provision.result, 'Succeeded')), and(canceled(),variables.destroyOnFailure))
-    condition: or(and(canceled(),variables.destroyOnFailure), and(failed(),variables.destroyOnFailure), and(succeeded(),variables.destroyOnSuccess))
+    condition: |
+      or(
+        and(canceled(),variables.destroyOnFailure), 
+        and(failed(),variables.destroyOnFailure), 
+        and(succeeded(),variables.destroyOnSuccess)
+      )
     timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
 
     variables:
