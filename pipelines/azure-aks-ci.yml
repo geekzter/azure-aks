@@ -93,7 +93,7 @@ variables:
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
 - name: 'TF_VAR_wait_for_agic'
-  value: ${{ parameters.deploy }} # Don't wait if we're not deploying applications
+  value: ${{ lower(parameters.deploy) }} # Don't wait if we're not deploying applications
 
 - name: 'resourceGroup' 
   value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
@@ -359,23 +359,23 @@ jobs:
       - Provision
     displayName: 'Tear down & Clean up (${{ lower(parameters.destroy) }})'
     # Run if Terraform destroy failed, or the whole pipeline was canceled
-    # condition: |
-      # or(
-      #   and(
-      #     and(eq(dependencies.Provision.result, 'Failed'),variables.destroyOnFailure), 
-      #     and(eq(dependencies.Provision.result, 'Succeeded'),variables.destroyOnSuccess)
-      #   ), 
-      #   and(
-      #     canceled(),
-      #     variables.destroyOnFailure
-      #   )
-      # )
     condition: |
       or(
-        and(canceled(),variables.destroyOnFailure), 
-        and(failed(),variables.destroyOnFailure), 
-        and(succeeded(),variables.destroyOnSuccess)
+        and(
+          and(eq(dependencies.Provision.result, 'Failed'),variables.destroyOnFailure), 
+          and(eq(dependencies.Provision.result, 'Succeeded'),variables.destroyOnSuccess)
+        ), 
+        and(
+          canceled(),
+          variables.destroyOnFailure
+        )
       )
+    # condition: |
+    #   or(
+    #     and(canceled(),variables.destroyOnFailure), 
+    #     and(failed(),variables.destroyOnFailure), 
+    #     and(succeeded(),variables.destroyOnSuccess)
+    #   )
     timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
 
     variables:
