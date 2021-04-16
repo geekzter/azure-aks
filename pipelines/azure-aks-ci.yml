@@ -241,6 +241,19 @@ jobs:
           failOnStandardError: true
           workingDirectory: '$(terraformDirectory)'
 
+    - ${{ if eq(parameters.inherit, true) }}:
+      - task: AzureCLI@2
+        displayName: 'Inherit KUBECONFIG'
+        inputs:
+          azureSubscription: '$(subscriptionConnection)'
+          scriptType: pscore
+          scriptLocation: scriptPath
+          scriptPath: kube_config.ps1
+          addSpnToEnvironment: true
+          useGlobalConfig: true
+          failOnStandardError: true
+          workingDirectory: '$(scriptDirectory)'
+
     - task: TerraformCLI@0
       displayName: 'Terraform plan'
       inputs:

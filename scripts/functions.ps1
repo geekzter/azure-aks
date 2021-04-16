@@ -71,8 +71,7 @@ function Prepare-KubeConfig(
         $kubeConfigFile = (Join-Path $PSScriptRoot ".." .kube "${kubeConfigMoniker}config")
         Set-Content -Path $kubeConfigFile -Value $kubeConfig 
         $env:KUBECONFIG = $kubeConfigFile
-    } else {
-        Write-Warning "Terraform output variable kube_config not set"
+        return $kubeConfigFile
     }
 }
 
