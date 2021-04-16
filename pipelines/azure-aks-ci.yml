@@ -390,63 +390,74 @@ jobs:
       clean: all
 
     steps:
-    - ${{ if not(eq(parameters.destroy, 'Never')) }}:
-      - task: AzureCLI@2
-        name: teardown
-        displayName: 'Tear down remaining resources'
-        inputs:
-          azureSubscription: '$(subscriptionConnection)'
-          scriptType: pscore
-          scriptLocation: inlineScript
-          inlineScript: |
-            $ErrorActionPreference = "Continue" # Continue to remove resources if remove by resoyrce group fails
-            # Build JMESPath expression
-            $tagQuery = "[?tags.repository == '$(repository)' && tags.workspace == '${env:TF_WORKSPACE}' && tags.runid == '$(Build.BuildId)' && properties.provisioningState != 'Deleting'].id"
-            Write-Host "Removing resources identified by `"$tagQuery`"..."
+    - task: AzureCLI@2
+      name: teardown
+      displayName: 'Tear down remaining resources'
+      inputs:
+        azureSubscription: '$(subscriptionConnection)'
+        scriptType: pscore
+        scriptLocation: inlineScript
+        inlineScript: |
+          $ErrorActionPreference = "Continue" # Continue to remove resources if remove by resoyrce group fails
+          # Build JMESPath expression
+          $tagQuery = "[?tags.repository == '$(repository)' && tags.workspace == '${env:TF_WORKSPACE}' && tags.runid == '$(Build.BuildId)' && properties.provisioningState != 'Deleting'].id"
+          Write-Host "Removing resources identified by `"$tagQuery`"..."
 
-            # Remove resource groups
-            $resourceGroupIDs = $(az group list --query "${tagQuery}" -o tsv)
-            if ($resourceGroupIDs) {
-              Write-Host "Removing resource group(s) `"${resourceGroupIDs}`"..."
+          # Remove resource groups
+          $resourceGroupIDs = $(az group list --query "${tagQuery}" -o tsv)
+          if ($resourceGroupIDs) {
+            Write-Host "Removing resource group(s) `"${resourceGroupIDs}`"..."
+            &{ # az writes information to stderr
+              $ErrorActionPreference = 'SilentlyContinue'
+              az resource delete --ids $resourceGroupIDs 2>&1
+            }
+          } else {
+            Write-Host "No resource groups to remove"
+          }
+
+          # Remove (remaining) resources
+          $resourceIDs = $(az resource list --query "${tagQuery}" -o tsv)
+          if ($resourceIDs) {
+            Write-Host "Removing resources `"${resourceIDs}`"..."
+            &{ # az writes information to stderr
+              $ErrorActionPreference = 'SilentlyContinue'
+              az resource delete --ids $resourceIDs 2>&1
+            }
+          } else {
+            Write-Host "No resources to remove"
+          }
+
+          # Remove VNet peerings
+          if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
+            $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
+            if ($peeringIDs) {
+              Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
               &{ # az writes information to stderr
                 $ErrorActionPreference = 'SilentlyContinue'
-                az resource delete --ids $resourceGroupIDs 2>&1
+                az resource delete --ids $peeringIDs 2>&1
               }
             } else {
-              Write-Host "No resource groups to remove"
+              Write-Host "No virtual network peerings to remove"
             }
+          }
+        addSpnToEnvironment: true
+        useGlobalConfig: true
+        failOnStandardError: true
+        workingDirectory: '$(terraformDirectory)'
 
-            # Remove (remaining) resources
-            $resourceIDs = $(az resource list --query "${tagQuery}" -o tsv)
-            if ($resourceIDs) {
-              Write-Host "Removing resources `"${resourceIDs}`"..."
-              &{ # az writes information to stderr
-                $ErrorActionPreference = 'SilentlyContinue'
-                az resource delete --ids $resourceIDs 2>&1
-              }
-            } else {
-              Write-Host "No resources to remove"
-            }
-
-            # Remove VNet peerings
-            if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
-              $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
-              if ($peeringIDs) {
-                Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
-                &{ # az writes information to stderr
-                  $ErrorActionPreference = 'SilentlyContinue'
-                  az resource delete --ids $peeringIDs 2>&1
-                }
-              } else {
-                Write-Host "No virtual network peerings to remove"
-              }
-            }
-          addSpnToEnvironment: true
-          useGlobalConfig: true
-          failOnStandardError: true
-          workingDirectory: '$(terraformDirectory)'
+      - ${{ if not(eq(parameters.inherit, true)) }}: # Only works if we can identity the suffix and thefore the resource group name
+        - task: AzureResourceManagerTemplateDeployment@3
+          displayName: 'Delete $(resourceGroup)'
+          condition: failed() # Try this if the previous approach failed
+          inputs:
+            deploymentScope: 'Resource Group'
+            azureResourceManagerConnection: '$(subscriptionConnection)'
+            subscriptionId: '$(ARM_SUBSCRIPTION_ID)'
+            action: 'DeleteRG'
+            resourceGroupName: '$(resourceGroup)'
 
       - task: TerraformInstaller@0
+        condition: succeededOrFailed()
         displayName: 'Install terraform'
         inputs:
           terraformVersion: '$(terraformVersion)'
