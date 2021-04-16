@@ -154,37 +154,9 @@ jobs:
           workingDirectory: '$(terraformDirectory)'
 
     - pwsh: |
-        # Use pipeline agent VNet as network to peer from
-        $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
-
-        # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
-        Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null
-        $env:TF_VAR_address_space = "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
-
-        # List environment variables
-        Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
-
-        # Convert uppercased Terraform environment variables to .auto.tfvars file
-        foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
-          $terraformVariableName = $tfvar.Name.Substring(7).ToLowerInvariant()
-          $terraformVariableValue = $tfVar.Value
-
-          $varArgs += " -var ${terraformVariableName}=${terraformVariableValue}"
-          #Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
-        } 
-        #(Get-Content ci.auto.tfvars) -replace "`"false`"","false" | Out-File ci.auto.tfvars -Force
-        #(Get-Content ci.auto.tfvars) -replace "`"true`"","true" | Out-File ci.auto.tfvars -Force
-
-        Write-Host "Contents of ci.auto.tfvars:"
-        #Get-Content ci.auto.tfvars
-
-        Write-Host "Terraform plan/apply options: ${varArgs}"
-        Write-Host "##vso[task.setvariable variable=variableOption;isOutput=true]$varArgs"
-
         $terraformVersion = (Get-Content .terraform-version)
         Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"    
 
-        # Is this still needed?
         Copy-Item backend.tf.sample backend.tf
       name: terraformConfig
       displayName: 'Prepare Terraform config'
@@ -243,7 +215,7 @@ jobs:
 
     - ${{ if eq(parameters.inherit, true) }}:
       - task: AzureCLI@2
-        displayName: 'Inherit KUBECONFIG'
+        displayName: 'Restore kubeconfig'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
@@ -253,6 +225,41 @@ jobs:
           useGlobalConfig: true
           failOnStandardError: true
 
+    - pwsh: |
+        # Use pipeline agent VNet as network to peer from
+        $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
+
+        # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
+        Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null
+        $env:TF_VAR_address_space = "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
+
+        if ($${{ parameters.inherit }}) {
+          # Make sure suffix stays the same
+          $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
+        }
+
+        # List environment variables
+        Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
+
+        # Convert uppercased Terraform environment variables to .auto.tfvars file
+        foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
+          $terraformVariableName = $tfvar.Name.Substring(7).ToLowerInvariant()
+          $terraformVariableValue = $tfVar.Value
+
+          $varArgs += " -var ${terraformVariableName}=${terraformVariableValue}"
+          #Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
+        } 
+        #(Get-Content ci.auto.tfvars) -replace "`"false`"","false" | Out-File ci.auto.tfvars -Force
+        #(Get-Content ci.auto.tfvars) -replace "`"true`"","true" | Out-File ci.auto.tfvars -Force
+        #Write-Host "Contents of ci.auto.tfvars:"
+        #Get-Content ci.auto.tfvars
+
+        Write-Host "Terraform plan/apply options: ${varArgs}"
+        Write-Host "##vso[task.setvariable variable=variableOption;isOutput=true]$varArgs"
+      name: terraformVariables
+      displayName: 'Prepare Terraform variables'
+      workingDirectory: '$(terraformDirectory)'
+
     - task: TerraformCLI@0
       displayName: 'Terraform plan'
       inputs:
@@ -260,7 +267,7 @@ jobs:
         workingDirectory: '$(terraformDirectory)'
         environmentServiceName: '$(subscriptionConnection)'
         runAzLogin: true
-        commandOptions: '$(terraformConfig.variableOption) -out=ci.tfplan'
+        commandOptions: '$(terraformVariables.variableOption) -out=ci.tfplan'
         allowTelemetryCollection: true
         publishPlanResults: 'ci'
 
@@ -362,7 +369,8 @@ jobs:
           environmentServiceName: '$(subscriptionConnection)'
           runAzLogin: true
           allowTelemetryCollection: true
-
+        env:
+          KUBECONFIG: variables['KUBE_CONFIG_PATH']
 
 - ${{ if ne(parameters.destroy, 'Never') }}:
   # Clean up resources, in the event 'terraform destroy' fails   

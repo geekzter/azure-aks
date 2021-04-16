@@ -73,6 +73,7 @@ function Prepare-KubeConfig(
         $kubeConfigFile = (Join-Path $kubeConfigDirectory "${kubeConfigMoniker}config")
         Set-Content -Path $kubeConfigFile -Value $kubeConfig 
         $env:KUBECONFIG = $kubeConfigFile
+        Write-Host "Prepared ${kubeConfigFile}"
         return $kubeConfigFile
     }
 }
