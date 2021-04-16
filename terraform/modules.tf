@@ -3,12 +3,14 @@ module network {
   source                       = "./modules/network"
   resource_group_name          = azurerm_resource_group.rg.name
   address_space                = var.address_space
+  location                     = var.location
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
   peer_network_has_gateway     = var.peer_network_has_gateway
   peer_network_id              = var.peer_network_id
   subnets                      = [
     "nodes"
   ]
+  tags                         = azurerm_resource_group.rg.tags
 }
 
 # Provision base Kubernetes infrastructure provided by Azure
@@ -46,6 +48,7 @@ module aks_network {
   nodes_ip_group_id            = module.network.nodes_ip_group_id
   nodes_subnet_id              = module.network.subnet_ids["nodes"]
   peer_network_id              = var.peer_network_id
+  resource_group_id            = azurerm_resource_group.rg.id
   tags                         = azurerm_resource_group.rg.tags
   wait_for_agic                = var.wait_for_agic
 

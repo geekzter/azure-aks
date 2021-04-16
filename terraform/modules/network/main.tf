@@ -1,7 +1,3 @@
-data azurerm_resource_group rg {
-  name                         = var.resource_group_name
-}
-
 data http local_public_ip {
 # Get public IP address of the machine running this terraform template
   url                          = "http://ipinfo.io/ip"
@@ -20,32 +16,32 @@ locals {
 }
 
 resource azurerm_virtual_network network {
-  name                         = "${data.azurerm_resource_group.rg.name}-network"
-  location                     = data.azurerm_resource_group.rg.location
-  resource_group_name          = data.azurerm_resource_group.rg.name
+  name                         = "${var.resource_group_name}-network"
+  location                     = var.location
+  resource_group_name          = var.resource_group_name
   address_space                = [var.address_space]
   dns_servers                  = var.dns_servers
   
-  tags                         = data.azurerm_resource_group.rg.tags
+  tags                         = var.tags
 }
 
 resource azurerm_subnet iag_subnet {
   name                         = "AzureFirewallSubnet"
   virtual_network_name         = azurerm_virtual_network.network.name
-  resource_group_name          = data.azurerm_resource_group.rg.name
+  resource_group_name          = var.resource_group_name
   address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],10,0)]
 }
 resource azurerm_subnet waf_subnet {
   name                         = "ApplicationGatewaySubnet"
   virtual_network_name         = azurerm_virtual_network.network.name
-  resource_group_name          = data.azurerm_resource_group.rg.name
+  resource_group_name          = var.resource_group_name
   address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],10,1)]
 }
 
 resource azurerm_subnet subnet {
   name                         = var.subnets[count.index]
   virtual_network_name         = azurerm_virtual_network.network.name
-  resource_group_name          = data.azurerm_resource_group.rg.name
+  resource_group_name          = var.resource_group_name
   address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],var.subnet_bits,count.index+1)]
   enforce_private_link_endpoint_network_policies = true
 
@@ -53,9 +49,9 @@ resource azurerm_subnet subnet {
 }
 
 resource azurerm_route_table user_defined_routes {
-  name                        = "${data.azurerm_resource_group.rg.name}-routes"
-  location                     = data.azurerm_resource_group.rg.location
-  resource_group_name          = data.azurerm_resource_group.rg.name
+  name                        = "${var.resource_group_name}-routes"
+  location                     = var.location
+  resource_group_name          = var.resource_group_name
   
   route {
     name                       = "VnetLocal"
@@ -76,7 +72,7 @@ resource azurerm_route_table user_defined_routes {
     ]
   }  
 
-  tags                         = data.azurerm_resource_group.rg.tags
+  tags                         = var.tags
 }
 
 resource azurerm_subnet_route_table_association user_defined_routes {

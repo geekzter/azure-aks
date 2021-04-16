@@ -3,6 +3,7 @@ variable dns_servers {
   type    = list
   default = ["168.63.129.16"]
 }
+variable location {}
 variable log_analytics_workspace_id {}
 variable peer_network_id {}
 variable peer_network_has_gateway {
@@ -15,4 +16,7 @@ variable subnet_bits {
 }
 variable subnets {
   type = list
+}
+variable tags {
+  type        = map
 }

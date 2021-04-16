@@ -1,5 +1,5 @@
 output application_gateway_id {
-  value = var.deploy_agic ? "${data.azurerm_resource_group.rg.id}/providers/Microsoft.Network/applicationGateways/${var.resource_group_name}-waf" : null
+  value = var.deploy_agic ? "${var.resource_group_id}/providers/Microsoft.Network/applicationGateways/${var.resource_group_name}-waf" : null
 }
 
 output application_gateway_public_ip {

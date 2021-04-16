@@ -13,7 +13,7 @@ resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
   #   source_ip_groups           = [data.azurerm_ip_group.nodes.id]
   #   destination_ports          = ["1194"]
   #   destination_addresses      = [
-  #     "AzureCloud.${data.azurerm_resource_group.rg.location}",
+  #     "AzureCloud.${var.location}",
   #   ]
   #   protocols                  = ["UDP"]
   # }
@@ -22,7 +22,7 @@ resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
   #   source_ip_groups           = [data.azurerm_ip_group.nodes.id]
   #   destination_ports          = ["9000"]
   #   destination_addresses      = [
-  #     "AzureCloud.${data.azurerm_resource_group.rg.location}",
+  #     "AzureCloud.${var.location}",
   #   ]
   #   protocols                  = ["TCP"]
   # }
@@ -31,7 +31,7 @@ resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
   #   source_ip_groups           = [data.azurerm_ip_group.nodes.id]
   #   destination_ports          = ["443"]
   #   destination_addresses      = [
-  #     "AzureCloud.${data.azurerm_resource_group.rg.location}",
+  #     "AzureCloud.${var.location}",
   #   ]
   #   protocols                  = ["TCP"]
   # }
@@ -70,7 +70,7 @@ resource azurerm_firewall_application_rule_collection aks_app_rules {
 
     source_ip_groups           = [azurerm_ip_group.nodes.id]
     target_fqdns               = [
-      "*.hcp.${data.azurerm_resource_group.rg.location}.azmk8s.io",
+      "*.hcp.${var.location}.azmk8s.io",
       "mcr.microsoft.com",
       "*.data.mcr.microsoft.com",
       "management.azure.com",

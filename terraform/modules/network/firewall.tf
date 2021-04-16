@@ -7,42 +7,42 @@ resource random_string iag_domain_name_label {
 }
 
 resource azurerm_ip_group admin {
-  name                         = "${data.azurerm_resource_group.rg.name}-ipgroup-admin"
-  location                     = data.azurerm_resource_group.rg.location
-  resource_group_name          = data.azurerm_resource_group.rg.name
+  name                         = "${var.resource_group_name}-ipgroup-admin"
+  location                     = var.location
+  resource_group_name          = var.resource_group_name
   cidrs                        = local.admin_cidrs
 
-  tags                         = data.azurerm_resource_group.rg.tags
+  tags                         = var.tags
 }
 
 resource azurerm_ip_group nodes {
-  name                         = "${data.azurerm_resource_group.rg.name}-ipgroup-nodes"
-  location                     = data.azurerm_resource_group.rg.location
+  name                         = "${var.resource_group_name}-ipgroup-nodes"
+  location                     = var.location
   resource_group_name          = var.resource_group_name
   cidrs                        = [
     for subnet in azurerm_subnet.subnet : subnet.address_prefixes[0]
   ]
 
-  tags                         = data.azurerm_resource_group.rg.tags
+  tags                         = var.tags
 }
 
 # https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall
 # We recommend having a minimum of 20 Frontend IPs on the Azure Firewall for production scenarios to avoid incurring in SNAT port exhaustion issues.
 resource azurerm_public_ip iag_pip {
-  name                         = "${data.azurerm_resource_group.rg.name}-iag-pip"
-  location                     = data.azurerm_resource_group.rg.location
-  resource_group_name          = data.azurerm_resource_group.rg.name
+  name                         = "${var.resource_group_name}-iag-pip"
+  location                     = var.location
+  resource_group_name          = var.resource_group_name
   allocation_method            = "Static"
   sku                          = "Standard" # Zone redundant
   domain_name_label            = random_string.iag_domain_name_label.result
 
-  tags                         = data.azurerm_resource_group.rg.tags
+  tags                         = var.tags
 }
 
 resource azurerm_firewall iag {
-  name                         = "${data.azurerm_resource_group.rg.name}-iag"
-  location                     = data.azurerm_resource_group.rg.location
-  resource_group_name          = data.azurerm_resource_group.rg.name
+  name                         = "${var.resource_group_name}-iag"
+  location                     = var.location
+  resource_group_name          = var.resource_group_name
 
   dns_servers                  = var.dns_servers
 
@@ -55,7 +55,7 @@ resource azurerm_firewall iag {
     public_ip_address_id       = azurerm_public_ip.iag_pip.id
   }
 
-  tags                         = data.azurerm_resource_group.rg.tags
+  tags                         = var.tags
 }
 
 resource azurerm_monitor_diagnostic_setting iag_logs {
