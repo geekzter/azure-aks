@@ -28,6 +28,8 @@ resource kubernetes_service internal_load_balancer {
 
 locals {
    application_gateway_name    = "${var.resource_group_name}-waf"
+   application_gateway_cmd     = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ApplicationGatewayName ${local.application_gateway_name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
+   application_gateway_cmdfull = var.wait_for_agic ? local.application_gateway_cmd : "${local.application_gateway_cmd} -NoWait"
 }
 
 # https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
@@ -40,7 +42,7 @@ resource null_resource application_gateway_add_on {
 
   provisioner local-exec { 
     interpreter                = ["pwsh", "-nop", "-c"]
-    command                    = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ApplicationGatewayName ${local.application_gateway_name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
+    command                    = local.application_gateway_cmdfull
     environment                = {
       AZURE_EXTENSION_USE_DYNAMIC_INSTALL = "yes_without_prompt"
     }  

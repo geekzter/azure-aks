@@ -85,13 +85,18 @@ variables:
   value: '$(Build.SourcesDirectory)/scripts'
 - name: 'terraformDirectory'
   value: '$(Build.SourcesDirectory)/terraform'
-# - name: 'TF_VAR_resource_suffix'
-#   value: 'b$(Build.BuildId)'
+- name: 'TF_VAR_resource_prefix'
+  value: 'k8s'
+- ${{ if not(eq(parameters.inherit, true)) }}:  # Don't reset suffix if we want to keep existing resources
+  - name: 'TF_VAR_resource_suffix'
+    value: 'b$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
+- name: 'TF_VAR_wait_for_agic'
+  value: ${{ parameters.deploy }} # Don't wait if we're not deploying applications
 
 - name: 'resourceGroup' 
-  value: 'k8s-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
+  value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
 
 jobs:
 - job: 'Provision'
