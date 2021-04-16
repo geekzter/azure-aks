@@ -38,6 +38,7 @@ provider helm {
 
 # Use AKS to prepare Kubernetes provider
 provider kubernetes {
+  config_path                  = abspath(local.kube_config_path)
   host                         = var.deploy_aks ? module.aks.0.kubernetes_host : ""
   client_certificate           = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_certificate) : ""
   client_key                   = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_key) : ""
