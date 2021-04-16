@@ -87,9 +87,9 @@ variables:
   value: '$(Build.SourcesDirectory)/terraform'
 - name: 'TF_VAR_resource_prefix'
   value: 'k8s'
-- ${{ if not(eq(parameters.inherit, true)) }}:  # Don't reset suffix if we want to keep existing resources
-  - name: 'TF_VAR_resource_suffix'
-    value: 'b$(Build.BuildId)'
+# - ${{ if not(eq(parameters.inherit, true)) }}:  # Don't reset suffix if we want to keep existing resources
+#   - name: 'TF_VAR_resource_suffix'
+#     value: 'b$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
 - name: 'TF_VAR_wait_for_agic'
@@ -233,10 +233,10 @@ jobs:
         Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null
         $env:TF_VAR_address_space = "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
 
-        if ($${{ parameters.inherit }}) {
-          # Make sure suffix stays the same
-          $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
-        }
+        # if ($${{ parameters.inherit }}) {
+        #   # Make sure suffix stays the same
+        #   $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
+        # }
 
         # List environment variables
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
@@ -278,7 +278,6 @@ jobs:
         workingDirectory: '$(terraformDirectory)'
         environmentServiceName: '$(subscriptionConnection)'
         runAzLogin: true
-        # commandOptions: '$(terraformConfig.variableOption)'
         commandOptions: 'ci.tfplan'
         allowTelemetryCollection: true
 
@@ -459,16 +458,16 @@ jobs:
         failOnStandardError: true
         workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if not(eq(parameters.inherit, true)) }}: # Only works if we can identity the suffix and thefore the resource group name
-      - task: AzureResourceManagerTemplateDeployment@3
-        displayName: 'Delete $(resourceGroup)'
-        condition: failed() # Try this if the previous approach failed
-        inputs:
-          deploymentScope: 'Resource Group'
-          azureResourceManagerConnection: '$(subscriptionConnection)'
-          subscriptionId: '$(ARM_SUBSCRIPTION_ID)'
-          action: 'DeleteRG'
-          resourceGroupName: '$(resourceGroup)'
+    # - ${{ if not(eq(parameters.inherit, true)) }}: # Only works if we can identity the suffix and thefore the resource group name
+    #   - task: AzureResourceManagerTemplateDeployment@3
+    #     displayName: 'Delete $(resourceGroup)'
+    #     condition: failed() # Try this if the previous approach failed
+    #     inputs:
+    #       deploymentScope: 'Resource Group'
+    #       azureResourceManagerConnection: '$(subscriptionConnection)'
+    #       subscriptionId: '$(ARM_SUBSCRIPTION_ID)'
+    #       action: 'DeleteRG'
+    #       resourceGroupName: '$(resourceGroup)'
 
     - task: TerraformInstaller@0
       condition: succeededOrFailed() # Procees clearing Terraform state, even if resources could not be removed
