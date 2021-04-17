@@ -16,7 +16,7 @@ function Get-Tools() {
 
 function Get-LoadBalancerIPAddress(
     [parameter(Mandatory=$true)][string]$KubernetesService,
-    [parameter(Mandatory=$false)][int]$MaxTests=600    
+    [parameter(Mandatory=$false)][int]$MaxTests=600
 ) {
     $ilb = (kubectl get service azure-vote-front -o=jsonpath='{.status.loadBalancer}' | ConvertFrom-Json)
     if (!$ilb) {
@@ -68,11 +68,13 @@ function Prepare-KubeConfig(
     if ($kubeConfig) {
         # Make sure the local file exists, terraform apply may have run on another host
         $kubeConfigMoniker = ($Workspace -eq "default") ? "" : $Workspace 
-        $kubeConfigFile = (Join-Path $PSScriptRoot ".." .kube "${kubeConfigMoniker}config")
+        $kubeConfigDirectory = (Join-Path $PSScriptRoot ".." .kube)
+        $null = New-Item -ItemType Directory -Force -Path $kubeConfigDirectory 
+        $kubeConfigFile = (Join-Path $kubeConfigDirectory "${kubeConfigMoniker}config")
         Set-Content -Path $kubeConfigFile -Value $kubeConfig 
         $env:KUBECONFIG = $kubeConfigFile
-    } else {
-        Write-Warning "Terraform output variable kube_config not set"
+        Write-Host "Prepared ${kubeConfigFile}"
+        return $kubeConfigFile
     }
 }
 
@@ -116,7 +118,7 @@ function Test-App (
             if ($test -ge $MaxTests) {
                 throw
             } else {
-                Start-Sleep -Milliseconds 500
+                Start-Sleep -Milliseconds 1000
             }
         }
     }

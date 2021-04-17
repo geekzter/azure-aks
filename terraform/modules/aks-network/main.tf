@@ -1,7 +1,3 @@
-data azurerm_resource_group rg {
-  name                         = var.resource_group_name
-}
-
 data azurerm_kubernetes_cluster aks {
   name                         = element(split("/",var.aks_id),length(split("/",var.aks_id))-1)
   resource_group_name          = element(split("/",var.aks_id),length(split("/",var.aks_id))-5)
@@ -30,7 +26,7 @@ locals {
 }
 
 resource azurerm_ip_group api_server {
-  name                         = "${data.azurerm_resource_group.rg.name}-ipgroup-apiserver"
+  name                         = "${var.resource_group_name}-ipgroup-apiserver"
   location                     = var.location
   resource_group_name          = var.resource_group_name
   cidrs                        = data.azurerm_kubernetes_cluster.aks.api_server_authorized_ip_ranges

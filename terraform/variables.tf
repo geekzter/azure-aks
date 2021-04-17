@@ -1,5 +1,5 @@
 variable address_space {
-  default     = "10.32.0.0/12"
+  default     = "10.32.0.0/16"
 }
 
 variable configure_kubernetes {
@@ -60,8 +60,13 @@ variable run_id {
 }
 
 variable ssh_public_key_file {
-  type         = string
-  default      = "~/.ssh/id_rsa.pub"
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
+}
+
+variable wait_for_agic {
+  default     = true
+  type        = bool
 }
 
 variable workspace_location {

@@ -1,32 +1,35 @@
 # Azure Internal Load Balancer
-# resource kubernetes_service internal_load_balancer {
-#   metadata {
-#     annotations                = {
-#       "service.beta.kubernetes.io/azure-load-balancer-internal" = "true"
-#     }
-#     name                       = "azure-all-front"
-#   }
-#   spec {
-#     selector                   = {
-#       app                      = "azure-all-front"
-#     }
-#     session_affinity           = "ClientIP"
-#     port {
-#       port                     = 80
-#     }
+resource kubernetes_service internal_load_balancer {
+  metadata {
+    annotations                = {
+      "service.beta.kubernetes.io/azure-load-balancer-internal" = "true"
+    }
+    name                       = "azure-all-front"
+  }
+  spec {
+    selector                   = {
+      app                      = "azure-all-front"
+    }
+    session_affinity           = "ClientIP"
+    port {
+      port                     = 80
+    }
 
-#     type                       = "LoadBalancer"
-#   }
+    type                       = "LoadBalancer"
+  }
 
-#   depends_on                   = [
-#     null_resource.application_gateway_add_on, # HACK; If AGiC can be provisioned, surely this can be provisioned
-#   ]
+  depends_on                   = [
+    # HACK: If AGiC can be provisioned, surely this can be provisioned
+    null_resource.application_gateway_add_on, 
+  ]
 
-#   count                        = var.peer_network_id != "" ? 1 : 0
-# }
+  count                        = var.peer_network_id != "" ? 1 : 0
+}
 
 locals {
    application_gateway_name    = "${var.resource_group_name}-waf"
+   application_gateway_cmd     = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ApplicationGatewayName ${local.application_gateway_name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
+   application_gateway_cmdfull = var.wait_for_agic ? local.application_gateway_cmd : "${local.application_gateway_cmd} -NoWait"
 }
 
 # https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
@@ -39,7 +42,7 @@ resource null_resource application_gateway_add_on {
 
   provisioner local-exec { 
     interpreter                = ["pwsh", "-nop", "-c"]
-    command                    = "./configure_app_gw.ps1 -AksName ${data.azurerm_kubernetes_cluster.aks.name} -ApplicationGatewayName ${local.application_gateway_name} -ResourceGroupName ${var.resource_group_name} -ApplicationGatewaySubnetID ${var.application_gateway_subnet_id}"
+    command                    = local.application_gateway_cmdfull
     environment                = {
       AZURE_EXTENSION_USE_DYNAMIC_INSTALL = "yes_without_prompt"
     }  

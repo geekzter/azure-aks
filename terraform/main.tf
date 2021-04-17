@@ -26,7 +26,6 @@ locals {
   suffix                       = var.resource_suffix != "" ? lower(var.resource_suffix) : random_string.suffix.result
   environment                  = var.resource_environment != "" ? lower(var.resource_environment) : terraform.workspace
   workspace_moniker            = terraform.workspace == "default" ? "" : terraform.workspace
-  resource_group_name          = "${lower(var.resource_prefix)}-${lower(local.environment)}-${lower(local.suffix)}"
 }
 
 # Usage: https://www.terraform.io/docs/providers/azurerm/d/client_config.html
@@ -39,7 +38,7 @@ data http localpublicip {
 }
 
 resource azurerm_resource_group rg {
-  name                         = local.resource_group_name
+  name                         = "${lower(var.resource_prefix)}-${lower(local.environment)}-${lower(local.suffix)}"
   location                     = var.location
 
   tags                         = map(
