@@ -1,3 +1,7 @@
+output address_space {
+  value       = var.address_space
+}
+
 output application_gateway_public_ip {
   value       = var.deploy_agic ? module.aks_network.0.application_gateway_public_ip : 0
 }

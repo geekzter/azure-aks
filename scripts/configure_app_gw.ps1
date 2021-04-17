@@ -19,7 +19,7 @@ function Wait-ApplicationGateway(
 ) {
     $nodeResourceGroupName = $(az aks show -n $AksName -g $ResourceGroupName --query nodeResourceGroup -o tsv)
 
-    Write-Host "Waiting for Application Gateway ${ApplicationGatewayName} to finish provisioning..."
+    Write-Host "Waiting for Application Gateway ${ApplicationGatewayName} to finish updating..."
     do {
         Start-Sleep -Milliseconds 500
         $appGWState = (az network application-gateway show -n $ApplicationGatewayName -g $nodeResourceGroupName --query "provisioningState" -o tsv 2>$null)

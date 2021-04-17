@@ -8,6 +8,10 @@ parameters:
   - ci1
   - ci2
   - ci3
+  - cd
+  - cd1
+  - cd2
+  - cd3
 - name: inherit
   displayName: Inherit state
   type: boolean
@@ -229,14 +233,15 @@ jobs:
         # Use pipeline agent VNet as network to peer from
         $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
 
-        # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
         Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null
-        $env:TF_VAR_address_space = "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
-
-        # if ($${{ parameters.inherit }}) {
-        #   # Make sure suffix stays the same
-        #   $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
-        # }
+        if ($${{ parameters.inherit }}) {
+          # Keep random values of previous runs
+          $env:TF_VAR_address_space = "$(terraform output -raw address_space 2>$null)"
+          $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
+        } else {
+          # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
+          $env:TF_VAR_address_space = "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
+        }
 
         # List environment variables
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
