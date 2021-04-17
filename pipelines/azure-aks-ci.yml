@@ -12,8 +12,8 @@ parameters:
   - cd1
   - cd2
   - cd3
-- name: inherit
-  displayName: Inherit state
+- name: clear
+  displayName: Clear state
   type: boolean
   default: false
 - name: deploy
@@ -91,7 +91,7 @@ variables:
   value: '$(Build.SourcesDirectory)/terraform'
 - name: 'TF_VAR_resource_prefix'
   value: 'k8s'
-- ${{ if not(eq(parameters.inherit, true)) }}:  # Don't reset suffix if we want to keep existing resources
+- ${{ if eq(parameters.clear, true) }}:  # Don't reset suffix if we want to keep existing resources
   - name: 'TF_VAR_resource_suffix'
     value: '$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
@@ -131,7 +131,7 @@ jobs:
     clean: all
 
   steps:
-    - ${{ if not(eq(parameters.inherit, true)) }}:
+    - ${{ if eq(parameters.clear, true) }}:
       - task: AzureCLI@2
         name: clear
         displayName: 'Remove conflicting resources from previous runs'
@@ -184,7 +184,7 @@ jobs:
         backendAzureRmKey: 'terraform.tfstate'
         allowTelemetryCollection: true
 
-    - ${{ if not(eq(parameters.inherit, true)) }}:
+    - ${{ if eq(parameters.clear, true) }}:
       - task: AzureCLI@2
         name: cleanup
         displayName: 'Clear Terraform state'
@@ -217,7 +217,7 @@ jobs:
           failOnStandardError: true
           workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if eq(parameters.inherit, true) }}:
+    - ${{ if not(eq(parameters.clear, true)) }}:
       - task: AzureCLI@2
         displayName: 'Restore kubeconfig'
         inputs:
@@ -234,14 +234,14 @@ jobs:
         $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
 
         Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null
-        if ($${{ parameters.inherit }}) {
+        if ($${{ not(parameters.clear) }} -and (!((terraform output resource_suffix 2>&1) -match "Warning"))) {
           # Keep random values of previous runs
-          $env:TF_VAR_address_space = "$(terraform output -raw address_space 2>$null)"
+          $env:TF_VAR_address_space   = "$(terraform output -raw address_space 2>$null)"
           $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
-        } else {
-          # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
-          $env:TF_VAR_address_space = "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
         }
+        # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
+        $env:TF_VAR_address_space   ??= "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
+        $env:TF_VAR_resource_suffix ??= "$(Build.BuildId)"
 
         # List environment variables
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
@@ -462,7 +462,7 @@ jobs:
         failOnStandardError: true
         workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if not(eq(parameters.inherit, true)) }}: # Only works if we can identity the suffix and thefore the resource group name
+    - ${{ if eq(parameters.clear, true) }}: # Only works if we can identity the suffix and thefore the resource group name
       - task: AzureResourceManagerTemplateDeployment@3
         displayName: 'Delete $(resourceGroup)'
         condition: failed() # Try this if the previous approach failed
