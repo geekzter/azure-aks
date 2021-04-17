@@ -29,7 +29,7 @@ output kube_config_base64 {
 }
 
 output kube_config_path {
-  value       = abspath(local.kube_config_path)
+  value       = local.kube_config_path
 }
 
 output kubernetes_api_server_ip_address {
