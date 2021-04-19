@@ -35,7 +35,10 @@ I won't go into detail of these modes, as the network mode is __irrelevant__ for
 If you're on macOS, you can run `brew bundle` in the repo root to get the required tools, as there is a `Brewfile`. 
 
 ### Connectivity
-As this provisions an isolated AKS, how will you be able to access the AKS cluster once deployed? If you set the `peer_network_id` Terraform variable to a network where you're running Terraform from (or you are connected to e.g. using VPN), this project will set up the peering and Private DNS link required to look up the Kubernetes API Server and access cluster nodes. Without this you can only perform partial deployment, you won't be able to deploy applications.
+As this provisions an isolated AKS, how will you be able to access the AKS cluster once deployed? If you set the `peer_network_id` Terraform variable to a network where you're running Terraform from (or you are connected to e.g. using VPN), this project will set up the peering and Private DNS link required to look up the Kubernetes API Server and access cluster nodes. Without this you can only perform partial deployment, you won't be able to deploy applications.   
+Examples:
+- The [pipeline](pipelines\azure-aks-ci.yml) in this repository uses a [Scale Set Agent pool](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/scale-set-agents?view=azure-devops) deployed into a virtual network by [geekzter/azure-pipeline-agents](https://github.com/geekzter/azure-pipeline-agents)
+- You can use [geekzter/azure-devenv](https://github.com/geekzter/azure-devenv) to create a fully prepped development VM
 
 ## Provisioning
 1. Clone repository:  
