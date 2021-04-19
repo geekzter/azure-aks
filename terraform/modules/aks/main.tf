@@ -72,7 +72,7 @@ resource azurerm_kubernetes_cluster aks {
   dns_prefix                   = var.dns_prefix
 
   # Triggers resource to be recreated
-  # kubernetes_version           = data.azurerm_kubernetes_service_versions.current.latest_version
+  kubernetes_version           = data.azurerm_kubernetes_service_versions.current.latest_version
 
   addon_profile {
     azure_policy {
@@ -82,9 +82,9 @@ resource azurerm_kubernetes_cluster aks {
       enabled                  = false # Use AGIC instead
     }
     kube_dashboard {
-      enabled                  = true
+      # Deprecated for Kubernetes version >= 1.19.0.
+      enabled                  = false
     }
-    
     oms_agent {
       enabled                  = true
       log_analytics_workspace_id = var.log_analytics_workspace_id
