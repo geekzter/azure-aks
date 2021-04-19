@@ -53,24 +53,6 @@ schedules:
 
 variables:
 - group: 'aks-ci'
-- name: destroyOnFailure
-  ${{ if eq(parameters.destroy, 'Always') }}:
-    value: true
-  ${{ if eq(parameters.destroy, 'Never') }}:
-    value: false
-  ${{ if eq(parameters.destroy, 'On failure') }}:
-    value: true
-  ${{ if eq(parameters.destroy, 'On success') }}:
-    value: false
-- name: destroyOnSuccess
-  ${{ if eq(parameters.destroy, 'Always') }}:
-    value: true
-  ${{ if eq(parameters.destroy, 'Never') }}:
-    value: false
-  ${{ if eq(parameters.destroy, 'On failure') }}:
-    value: false
-  ${{ if eq(parameters.destroy, 'On success') }}:
-    value: true
 - name: 'jobTimeOutMinutes'
   value: 180
 - name: 'repository'
@@ -233,7 +215,9 @@ jobs:
         # Use pipeline agent VNet as network to peer from
         $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
 
-        Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null
+        if ($env:TF_VAR_ADDRESS_SPACE) {
+          Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null # Override below
+        }
         if ($${{ not(parameters.clear) }} -and (!((terraform output resource_suffix 2>&1) -match "Warning"))) {
           # Keep random values of previous runs
           $env:TF_VAR_address_space   = "$(terraform output -raw address_space 2>$null)"
@@ -359,6 +343,13 @@ jobs:
           KUBECONFIG: variables['KUBE_CONFIG_PATH']
 
     - ${{ if not(eq(parameters.destroy, 'Never')) }}:
+      - pwsh: |
+          Write-Host "##vso[task.setvariable variable=result;isOutput=true]success"
+        name: provisioningResult
+        displayName: 'Indicate provisioning success'
+        condition: succeeded()
+
+    - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - task: TerraformCLI@0
         displayName: 'Terraform destroy (${{ lower(parameters.destroy) }})'
         ${{ if eq(parameters.destroy, 'Always') }}:
@@ -372,6 +363,7 @@ jobs:
           workingDirectory: '$(terraformDirectory)'
           environmentServiceName: '$(subscriptionConnection)'
           runAzLogin: true
+          commandOptions: '$(terraformVariables.variableOption)'
           allowTelemetryCollection: true
         env:
           KUBECONFIG: variables['KUBE_CONFIG_PATH']
@@ -382,18 +374,12 @@ jobs:
     dependsOn:
       - Provision
     displayName: 'Tear down & Clean up (${{ lower(parameters.destroy) }})'
-    # Run if Terraform destroy failed, or the whole pipeline was canceled
-    condition: |
-      or(
-        and(
-          and(eq(dependencies.Provision.result, 'Failed'),variables.destroyOnFailure), 
-          and(eq(dependencies.Provision.result, 'Succeeded'),variables.destroyOnSuccess)
-        ), 
-        and(
-          canceled(),
-          variables.destroyOnFailure
-        )
-      )
+    ${{ if eq(parameters.destroy, 'Always') }}:
+      condition: succeededOrFailed()
+    ${{ if eq(parameters.destroy, 'On failure') }}:
+      condition: not(eq(dependencies.Provision.outputs['provisioningResult.result'],'success'))
+    ${{ if eq(parameters.destroy, 'On success') }}:
+      condition: eq(dependencies.Provision.outputs['provisioningResult.result'],'success')
     timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
 
     variables:
