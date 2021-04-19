@@ -72,7 +72,7 @@ resource azurerm_kubernetes_cluster aks {
   dns_prefix                   = var.dns_prefix
 
   # Triggers resource to be recreated
-  kubernetes_version           = data.azurerm_kubernetes_service_versions.current.latest_version
+  # kubernetes_version           = data.azurerm_kubernetes_service_versions.current.latest_version
 
   addon_profile {
     azure_policy {
