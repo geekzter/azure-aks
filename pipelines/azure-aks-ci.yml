@@ -87,21 +87,21 @@ variables:
 jobs:
 - job: 'Provision'
   ${{ if and(eq(parameters.destroy, 'Always'),parameters.deploy) }}:
-    displayName: 'Provision, Deploy, Test & Destroy'
+    displayName: 'Provision (${{ parameters.workspace }}), Deploy, Test & Destroy'
   ${{ if and(eq(parameters.destroy, 'Never'),parameters.deploy) }}:
-    displayName: 'Provision, Deploy & Test'
+    displayName: 'Provision (${{ parameters.workspace }}), Deploy & Test'
   ${{ if and(eq(parameters.destroy, 'On failure'),parameters.deploy) }}:
-    displayName: 'Provision, Deploy, Test & Destroy (${{ lower(parameters.destroy) }})'
+    displayName: 'Provision (${{ parameters.workspace }}), Deploy, Test & Destroy (${{ lower(parameters.destroy) }})'
   ${{ if and(eq(parameters.destroy, 'On success'),parameters.deploy) }}:
-    displayName: 'Provision, Deploy, Test & Destroy (${{ lower(parameters.destroy) }})'
+    displayName: 'Provision (${{ parameters.workspace }}), Deploy, Test & Destroy (${{ lower(parameters.destroy) }})'
   ${{ if and(eq(parameters.destroy, 'Always'),not(parameters.deploy)) }}:
-    displayName: 'Provision & Destroy'
+    displayName: 'Provision (${{ parameters.workspace }}) & Destroy'
   ${{ if and(eq(parameters.destroy, 'Never'),not(parameters.deploy)) }}:
-    displayName: 'Provision'
+    displayName: 'Provision (${{ parameters.workspace }})'
   ${{ if and(eq(parameters.destroy, 'On failure'),not(parameters.deploy)) }}:
-    displayName: 'Provision & Destroy (${{ lower(parameters.destroy) }})'
+    displayName: 'Provision (${{ parameters.workspace }}) & Destroy (${{ lower(parameters.destroy) }})'
   ${{ if and(eq(parameters.destroy, 'On success'),not(parameters.deploy)) }}:
-    displayName: 'Provision & Destroy (${{ lower(parameters.destroy) }})'
+    displayName: 'Provision (${{ parameters.workspace }}) & Destroy (${{ lower(parameters.destroy) }})'
   condition: succeeded()
   timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
 
