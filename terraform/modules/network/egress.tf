@@ -10,7 +10,7 @@ resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
 
   # rule {
   #   name                       = "AllowOutboundAKSAPIServer1"
-  #   source_ip_groups           = [data.azurerm_ip_group.nodes.id]
+  #   source_ip_groups           = [azurerm_ip_group.nodes.id]
   #   destination_ports          = ["1194"]
   #   destination_addresses      = [
   #     "AzureCloud.${var.location}",
@@ -19,7 +19,7 @@ resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
   # }
   # rule {
   #   name                       = "AllowOutboundAKSAPIServer2"
-  #   source_ip_groups           = [data.azurerm_ip_group.nodes.id]
+  #   source_ip_groups           = [azurerm_ip_group.nodes.id]
   #   destination_ports          = ["9000"]
   #   destination_addresses      = [
   #     "AzureCloud.${var.location}",
@@ -28,7 +28,7 @@ resource azurerm_firewall_network_rule_collection iag_net_outbound_rules {
   # }
   # rule {
   #   name                       = "AllowOutboundAKSAPIServerHTTPS"
-  #   source_ip_groups           = [data.azurerm_ip_group.nodes.id]
+  #   source_ip_groups           = [azurerm_ip_group.nodes.id]
   #   destination_ports          = ["443"]
   #   destination_addresses      = [
   #     "AzureCloud.${var.location}",
@@ -98,7 +98,7 @@ resource azurerm_firewall_application_rule_collection aks_app_rules {
 
     protocol {
       port                     = "80"
-      type                     = "Https"
+      type                     = "Http"
     }
   }
 
@@ -170,6 +170,15 @@ resource azurerm_firewall_application_rule_collection aks_app_rules {
     }
   }
 
+  # https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#required-network-rules-1
+  rule {
+    name                       = "Allow DevSpaces"
+
+    source_ip_groups           = [azurerm_ip_group.nodes.id]
+    fqdn_tags                  = ["AzureDevSpaces"]
+  }
+
+
   # https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#azure-dev-spaces
   rule {
     name                       = "Allow outbound AKS Dev Spaces"
@@ -207,6 +216,7 @@ resource azurerm_firewall_application_rule_collection aks_app_rules {
   }
 
   # https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall
+  # Not required for private AKS, which uses a Private Endpoint
   # rule {
   #   name                       = "Allow outbound AKS"
 
