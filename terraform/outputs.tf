@@ -29,7 +29,8 @@ output kube_config_base64 {
 }
 
 output kube_config_path {
-  value       = local.kube_config_path
+  # Return machine independent relative path
+  value       = local.kube_config_relative_path
 }
 
 output kubernetes_api_server_ip_address {
