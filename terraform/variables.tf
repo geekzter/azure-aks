@@ -25,9 +25,17 @@ variable kube_config_path {
   default     = ""
 }
 
+variable kubernetes_version {
+  default     = ""
+}
+
 variable location {
   description = "The location/region where the resources will be created."
   default     = "westeurope"
+}
+
+variable node_size {
+  default     = "Standard_D2s_v3"
 }
 
 variable peer_network_has_gateway {

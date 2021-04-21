@@ -1,4 +1,5 @@
 locals {
+  kubernetes_version           = var.kubernetes_version != null && var.kubernetes_version != "" ? var.kubernetes_version : data.azurerm_kubernetes_service_versions.current.latest_version
   resource_group_name          = element(split("/",var.resource_group_id),length(split("/",var.resource_group_id))-1)
 }
 
@@ -72,7 +73,7 @@ resource azurerm_kubernetes_cluster aks {
   dns_prefix                   = var.dns_prefix
 
   # Triggers resource to be recreated
-  # kubernetes_version           = data.azurerm_kubernetes_service_versions.current.latest_version
+  kubernetes_version           = local.kubernetes_version
 
   addon_profile {
     azure_policy {
@@ -102,7 +103,7 @@ resource azurerm_kubernetes_cluster aks {
     node_count                 = 3
     tags                       = var.tags
     # https://docs.microsoft.com/en-us/azure/virtual-machines/disk-encryption#supported-vm-sizes
-    vm_size                    = "Standard_D2s_v3"
+    vm_size                    = var.node_size
     vnet_subnet_id             = var.node_subnet_id
   }
 

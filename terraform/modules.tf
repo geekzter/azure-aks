@@ -23,7 +23,9 @@ module aks {
   dns_prefix                   = "ew-aks"
   location                     = var.location
   kube_config_path             = local.kube_config_path
+  kubernetes_version           = var.kubernetes_version
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
+  node_size                    = var.node_size
   node_subnet_id               = module.network.subnet_ids["nodes"]
   resource_group_id            = azurerm_resource_group.rg.id
   ssh_public_key_file          = var.ssh_public_key_file
