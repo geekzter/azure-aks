@@ -19,7 +19,8 @@ resource random_string suffix {
 
 locals {
   aks_name                     = "aks-${terraform.workspace}-${local.suffix}"
-  kube_config_path             = var.kube_config_path != "" ? var.kube_config_path : "${path.root}/../.kube/${local.workspace_moniker}config"
+  kube_config_relative_path    = var.kube_config_path != "" ? var.kube_config_path : "../.kube/${local.workspace_moniker}config"
+  kube_config_absolute_path    = var.kube_config_path != "" ? var.kube_config_path : "${path.root}/../.kube/${local.workspace_moniker}config"
 
 # Making sure all character classes are represented, as random does not guarantee that  
   password                     = ".Az9${random_string.password.result}"

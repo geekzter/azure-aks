@@ -23,7 +23,7 @@ output kubernetes_host {
 }
 
 output kubernetes_version {
-  value = data.azurerm_kubernetes_service_versions.current.latest_version
+  value = azurerm_kubernetes_cluster.aks.kubernetes_version
 }
 
 output node_resource_group {

@@ -21,7 +21,7 @@ try {
     $agicIPAddress = (Get-TerraformOutput application_gateway_public_ip)
     if ($agicIPAddress) {
         Write-Host "`nDeploying ASP.NET App..."
-        kubectl apply -f https://raw.githubusercontent.com/Azure/application-gateway-kubernetes-ingress/master/docs/examples/aspnetapp.yaml
+        kubectl apply -f (Join-Path $manifestsDirectory aspnetapp.yaml)
         kubectl describe ingress aspnetapp
         kubectl get ingress
     }

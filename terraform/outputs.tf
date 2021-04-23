@@ -29,7 +29,8 @@ output kube_config_base64 {
 }
 
 output kube_config_path {
-  value       = local.kube_config_path
+  # Return machine independent relative path
+  value       = local.kube_config_relative_path
 }
 
 output kubernetes_api_server_ip_address {
@@ -43,6 +44,10 @@ output kubernetes_client_certificate {
 
 output kubernetes_host {
   value       = var.deploy_aks ? module.aks.0.kubernetes_host : null
+}
+
+output kubernetes_version {
+  value       = var.deploy_aks ? module.aks.0.kubernetes_version : null
 }
 
 output node_resource_group {

@@ -10,7 +10,7 @@ try {
         kubectl get nodes
         kubectl get ingress
     } else {
-        Write-Warning "Terraform did not provision K8s yet"
+        Write-Warning "Terraform did not provision K8s yet" >2&1
     }
 } finally {
     Pop-Location
