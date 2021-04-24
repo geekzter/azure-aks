@@ -156,16 +156,19 @@ jobs:
         displayName: 'Prepare Terraform config'
         workingDirectory: '$(terraformDirectory)'
 
+    - ${{ if parameters.unpinTerraform }}:
+      - pwsh: |
+          (Get-Content ./provider.tf) -replace "required_version *= `" *(~>|=) +",'required_version = "=> ' | Out-File provider.tf
+          Write-Host "##vso[task.setvariable variable=version;isOutput=true]latest"
+          Copy-Item backend.tf.sample backend.tf
+        name: terraformConfig
+        displayName: 'Prepare Terraform config (latest version)'
+        workingDirectory: '$(terraformDirectory)'
+
     - task: TerraformInstaller@0
-      ${{ if not(parameters.unpinTerraform) }}:
-        displayName: 'Install terraform'
-      ${{ if parameters.unpinTerraform }}:
-        displayName: 'Install terraform (latest)'
+      displayName: 'Install terraform'
       inputs:
-        ${{ if not(parameters.unpinTerraform) }}:
-          terraformVersion: '$(terraformConfig.version)'
-        ${{ if parameters.unpinTerraform }}:
-          terraformVersion: 'latest'
+        terraformVersion: '$(terraformConfig.version)'
 
     - ${{ if parameters.unpinTerraformProviders }}:
       # Unpin version e.g. "= 2.56" -> "~> 2.56"
@@ -495,10 +498,7 @@ jobs:
       condition: succeededOrFailed()
       displayName: 'Install terraform'
       inputs:
-        ${{ if not(parameters.unpinTerraform) }}:
-          terraformVersion: '$(terraformVersion)'
-        ${{ if parameters.unpinTerraform }}:
-          terraformVersion: 'latest'
+        terraformVersion: '$(terraformVersion)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
