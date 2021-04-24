@@ -194,9 +194,10 @@ jobs:
         backendAzureRmKey: 'terraform.tfstate'
         allowTelemetryCollection: true
 
-    - publish: $(terraformDirectory)
-      displayName: 'Publish Terraform workspace'
-      artifact: $(terraformArtifactName)
+    - ${{ if ne(parameters.destroy, 'Never') }}:
+      - publish: $(terraformDirectory)
+        displayName: 'Publish Terraform workspace'
+        artifact: $(terraformArtifactName)
 
     - ${{ if eq(parameters.clear, true) }}:
       - task: AzureCLI@2
@@ -512,14 +513,6 @@ jobs:
     - download: current
       displayName: 'Download Terraform directory from previous job'
       artifact: $(terraformArtifactName)
-
-    - pwsh: |
-        pwd
-        dir
-        Get-Content ./provider.tf
-        Get-Content ./backend.tf
-      displayName: 'Terraform directory contents'
-      workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
