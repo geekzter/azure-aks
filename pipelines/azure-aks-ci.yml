@@ -77,6 +77,8 @@ variables:
   value: '$(Build.SourcesDirectory)/manifests'
 - name: 'scriptDirectory'
   value: '$(Build.SourcesDirectory)/scripts'
+- name: 'terraformArtifactName'
+  value: '$(Build.SourcesDirectory)/terraform'
 - name: 'terraformDirectory'
   value: '$(Build.SourcesDirectory)/terraform'
 - name: 'TF_VAR_resource_prefix'
@@ -192,10 +194,9 @@ jobs:
         backendAzureRmKey: 'terraform.tfstate'
         allowTelemetryCollection: true
 
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish Initialized Terraform workspace'
-      inputs:
-        artifact: 'terraform'
+    - publish: $(terraformDirectory)
+      displayName: 'Publish Terraform workspace'
+      artifact: $(terraformArtifactName)
 
     - ${{ if eq(parameters.clear, true) }}:
       - task: AzureCLI@2
@@ -425,6 +426,7 @@ jobs:
 
     variables:
       providerConfig: $[ dependencies.Provision.outputs['providerConfig.content'] ]
+      terraformDirectory: $(Pipeline.Workspace)/$(terraformArtifactName)/s
       terraformVersion: $[ dependencies.Provision.outputs['terraformConfig.version'] ]
 
     pool:
@@ -506,6 +508,17 @@ jobs:
       displayName: 'Install terraform'
       inputs:
         terraformVersion: '$(terraformVersion)'
+
+    - download: current
+      displayName: 'Download Terraform directory from previous job'
+      artifact: $(terraformArtifactName)
+
+    - pwsh: |
+        dir
+        Get-Content ./provider.tf
+        Get-Content ./backend.tf
+      displayName: 'Terreform directory contents'
+      workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
