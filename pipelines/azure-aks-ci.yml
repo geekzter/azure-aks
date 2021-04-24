@@ -158,7 +158,8 @@ jobs:
 
     - ${{ if parameters.unpinTerraform }}:
       - pwsh: |
-          (Get-Content ./provider.tf) -replace "required_version *= `" *(~>|=) +",'required_version = "=> ' | Out-File provider.tf
+          (Get-Content ./provider.tf) -replace "required_version *= `" *(~>|=) +",'required_version = ">= ' | Out-File provider.tf
+          Get-Content ./provider.tf
           Write-Host "##vso[task.setvariable variable=version;isOutput=true]latest"
           Copy-Item backend.tf.sample backend.tf
         name: terraformConfig
