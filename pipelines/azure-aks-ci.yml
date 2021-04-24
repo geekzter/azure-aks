@@ -179,13 +179,6 @@ jobs:
         displayName: 'Unpin Terraform provider versions'
         workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if or(parameters.unpinTerraform,parameters.unpinTerraformProviders) }}:
-      - pwsh: |
-          Write-Host "##vso[task.setvariable variable=content;isOutput=true]$(Get-Content ./provider.tf -Raw)"
-        name: providerConfig
-        displayName: 'Export provider.tf'
-        workingDirectory: '$(terraformDirectory)'
-
     - task: TerraformCLI@0
       displayName: 'Terraform init'
       inputs:
@@ -198,6 +191,11 @@ jobs:
         backendAzureRmContainerName: '$(TF_STATE_CONTAINER_NAME)'
         backendAzureRmKey: 'terraform.tfstate'
         allowTelemetryCollection: true
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Initialized Terraform workspace'
+      inputs:
+        artifact: 'terraform'
 
     - ${{ if eq(parameters.clear, true) }}:
       - task: AzureCLI@2
@@ -508,17 +506,6 @@ jobs:
       displayName: 'Install terraform'
       inputs:
         terraformVersion: '$(terraformVersion)'
-
-    - ${{ if or(parameters.unpinTerraform,parameters.unpinTerraformProviders) }}:
-      - pwsh: |
-          $providerConfig = @"
-          $(providerConfig)
-          "@
-          Set-Content ./provider.tf -Value $providerConfig
-          Get-Content ./provider.tf
-        name: providerConfig
-        displayName: 'Restore provider.tf'
-        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
