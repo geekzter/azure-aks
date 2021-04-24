@@ -511,8 +511,11 @@ jobs:
 
     - ${{ if or(parameters.unpinTerraform,parameters.unpinTerraformProviders) }}:
       - pwsh: |
-          # Write-Output "$(providerConfig)" | Out-File provider.tf
-          Set-Content provider.tf -Value "$(providerConfig)"
+          $providerConfig = @"
+          $(providerConfig)
+          "@
+          Set-Content ./provider.tf -Value $providerConfig
+          Get-Content ./provider.tf
         name: providerConfig
         displayName: 'Restore provider.tf'
         workingDirectory: '$(terraformDirectory)'
