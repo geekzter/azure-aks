@@ -181,7 +181,7 @@ jobs:
 
     - ${{ if or(parameters.unpinTerraform,parameters.unpinTerraformProviders) }}:
       - pwsh: |
-          Write-Host "##vso[task.setvariable variable=content;isOutput=true]$(Get-Content ./provider.tf)"
+          Write-Host "##vso[task.setvariable variable=content;isOutput=true]$(Get-Content ./provider.tf -Raw)"
         name: providerConfig
         displayName: 'Export provider.tf'
         workingDirectory: '$(terraformDirectory)'
