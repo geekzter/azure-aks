@@ -24,11 +24,11 @@ AKS supports two networking 'modes'. These modes control the IP address allocati
 - [Azure CNI](https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni) uses the same address space for agents as the rest of the virtual network.
 See [comparison](https://docs.microsoft.com/en-us/azure/aks/concepts-network#compare-network-models)
 
-I won't go into detail of these modes, as the network mode is __irrelevant__ for the isolation meassures you need to take. Choosing one over the other does not make a major difference for network isolation. This deployment has been tested with Azure CNI.
+I won't go into detail of these modes, as the network mode is __irrelevant__ for the isolation meassures you need to take. Choosing one over the other does not make a major difference for network isolation. This deployment has been [tested](https://dev.azure.com/ericvan/VDC/_build/latest?definitionId=85&branchName=main) with Azure CNI.
 
 ## Pre-requisites
 ### Tools
-- To get started you need [Git](https://git-scm.com/), [Terraform](https://www.terraform.io/downloads.html) (to get that I use [tfenv](https://github.com/tfutils/tfenv) on Linux & macOS, [Homebrew](https://github.com/hashicorp/homebrew-tap) on macOS or [chocolatey](https://chocolatey.org/packages/terraform) on Windows)
+- To get started you need [Git](https://git-scm.com/), [Terraform](https://www.terraform.io/downloads.html) (to get that you can use [tfenv](https://github.com/tfutils/tfenv) on Linux & macOS, [Homebrew](https://github.com/hashicorp/homebrew-tap) on macOS or [chocolatey](https://chocolatey.org/packages/terraform) on Windows)
 - The AKS add on is configured through [PowerShell](https://github.com/PowerShell/PowerShell#get-powershell), as there is no native Terraform support yet.
 - Application deployment requires [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
@@ -79,4 +79,5 @@ When you want to destroy resources, run:
 
 ## Resources
 - [Azure Kubernetes Service checklist](https://www.the-aks-checklist.com/)
-- [Azure Kubernetes Service production baseline](https://aka.ms/architecture/aks-baseline)
+- [Baseline architecture for an Azure Kubernetes Service (AKS) cluster](https://aka.ms/architecture/aks-baseline)
+- [Enterprise-Scale Construction Set for Azure Kubernetes Services using Terraform](https://github.com/Azure/caf-terraform-landingzones-starter/tree/starter/enterprise_scale/construction_sets/aks/online/aks_secure_baseline)
