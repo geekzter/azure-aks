@@ -29,6 +29,14 @@ parameters:
   - Never 
   - 'On failure'
   - 'On success'
+- name: unpinTerraform
+  displayName: Unpin Terraform version
+  type: boolean
+  default: false
+- name: unpinTerraformProviders
+  displayName: Unpin Terraform provider versions
+  type: boolean
+  default: false
 
 trigger: none
 
@@ -152,6 +160,14 @@ jobs:
       displayName: 'Install terraform'
       inputs:
         terraformVersion: '$(terraformConfig.version)'
+
+    - ${{ if parameters.unpinTerraformProviders }}:
+      # Unpin version e.g. "= 2.56" -> "~> 2.56"
+      - pwsh: |
+          (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
+          Get-Content ./provider.tf
+        displayName: 'Unpin Terraform provider version'
+        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
