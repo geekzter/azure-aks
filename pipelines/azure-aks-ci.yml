@@ -514,11 +514,6 @@ jobs:
       artifact: $(terraformArtifactName)
 
     - pwsh: |
-        Write-Host "Workspace directory:"
-        echo $(Pipeline.Workspace)
-        dir $(Pipeline.Workspace
-
-        Write-Host "Artifact directory $(terraformArtifactName):"
         pwd
         dir
         Get-Content ./provider.tf
