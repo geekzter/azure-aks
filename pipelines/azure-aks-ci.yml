@@ -426,7 +426,7 @@ jobs:
 
     variables:
       providerConfig: $[ dependencies.Provision.outputs['providerConfig.content'] ]
-      terraformDirectory: $(Pipeline.Workspace)/$(terraformArtifactName)/s
+      terraformDirectory: $(Pipeline.Workspace)/$(terraformArtifactName)
       terraformVersion: $[ dependencies.Provision.outputs['terraformConfig.version'] ]
 
     pool:
@@ -514,10 +514,16 @@ jobs:
       artifact: $(terraformArtifactName)
 
     - pwsh: |
+        Write-Host "Workspace directory:"
+        echo $(Pipeline.Workspace)
+        dir $(Pipeline.Workspace
+
+        Write-Host "Artifact directory $(terraformArtifactName):"
+        pwd
         dir
         Get-Content ./provider.tf
         Get-Content ./backend.tf
-      displayName: 'Terreform directory contents'
+      displayName: 'Terraform directory contents'
       workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
