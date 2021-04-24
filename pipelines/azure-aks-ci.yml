@@ -147,26 +147,32 @@ jobs:
           failOnStandardError: true
           workingDirectory: '$(terraformDirectory)'
 
-    - pwsh: |
-        $terraformVersion = (Get-Content .terraform-version)
-        Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"    
-
-        Copy-Item backend.tf.sample backend.tf
-      name: terraformConfig
-      displayName: 'Prepare Terraform config'
-      workingDirectory: '$(terraformDirectory)'
+    - ${{ if not(parameters.unpinTerraform) }}:
+      - pwsh: |
+          $terraformVersion = (Get-Content .terraform-version)
+          Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"
+          Copy-Item backend.tf.sample backend.tf
+        name: terraformConfig
+        displayName: 'Prepare Terraform config'
+        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformInstaller@0
-      displayName: 'Install terraform'
+      ${{ if not(parameters.unpinTerraform) }}:
+        displayName: 'Install terraform'
+      ${{ if parameters.unpinTerraform }}:
+        displayName: 'Install terraform (latest)'
       inputs:
-        terraformVersion: '$(terraformConfig.version)'
+        ${{ if not(parameters.unpinTerraform) }}:
+          terraformVersion: '$(terraformConfig.version)'
+        ${{ if parameters.unpinTerraform }}:
+          terraformVersion: 'latest'
 
     - ${{ if parameters.unpinTerraformProviders }}:
       # Unpin version e.g. "= 2.56" -> "~> 2.56"
       - pwsh: |
           (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
           Get-Content ./provider.tf
-        displayName: 'Unpin Terraform provider version'
+        displayName: 'Unpin Terraform provider versions'
         workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
@@ -486,10 +492,13 @@ jobs:
           resourceGroupName: '$(resourceGroup)'
 
     - task: TerraformInstaller@0
-      condition: succeededOrFailed() # Procees clearing Terraform state, even if resources could not be removed
+      condition: succeededOrFailed()
       displayName: 'Install terraform'
       inputs:
-        terraformVersion: '$(terraformVersion)'
+        ${{ if not(parameters.unpinTerraform) }}:
+          terraformVersion: '$(terraformVersion)'
+        ${{ if parameters.unpinTerraform }}:
+          terraformVersion: 'latest'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
