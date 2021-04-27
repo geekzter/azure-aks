@@ -13,10 +13,11 @@ To constrain connectivity to/from an AKS cluster, the following available measur
 
 1. The Kubernetes API server is the entry point for Kubernetes management operations, and is hosted as a multi-tenant PaaS service by Microsoft. The API server can be projected in the Virtual Network using Private Link ([article](https://docs.microsoft.com/en-us/azure/aks/private-clusters))
 1. Instead of an external Load Balancer (with a public IP address), use an internal Load Balancer ([article](https://docs.microsoft.com/en-us/azure/aks/internal-lb))
-1. Use user defined routes and an Azure Firewall to manage egress, instead of breaking out to the Internet directly ([article](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall))
+limit-egress-traffic#restrict-egress-traffic-using-azure-firewall))
 1. Application Gateway can be used to manage ingress traffic. There are multiple ways to set this up, by far the simplest is to use the AKS add on. This lets AKS create the Application Gateway and maintain it's configuration ([article](https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing))   
+1. Use user defined routes and an Azure Firewall to manage egress, instead of breaking out to the Internet directly ([article](https://docs.microsoft.com/en-us/azure/aks/
 
-Note 2. and 4. are overlapping, you only need one of both.
+Note 2. and 3. are overlapping, you only need one of both.
 
 ### AKS Networking modes
 AKS supports two networking 'modes'. These modes control the IP address allocation of the agent nodes in the cluster. In short: 
