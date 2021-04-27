@@ -9,7 +9,7 @@ This repo lets you provision a network isolated Azure Kubernetes Service, custom
 
 When you create an Azure Kubernetes Service (AKS) in the Azure Portal, or with the Azure CLI, by default it will be open in the sense of traffic (both application & management) using public IP addresses. This is a challenge in Enterprise, especially in regulated industries. Effort is needed to embed services in Virtual Networks, and in the case of AKS there are quite a few moving parts to consider.
 
-To constrain connectivity to/from an AKS cluster, the following available meassures are implemented in this repo:
+To constrain connectivity to/from an AKS cluster, the following available measures are implemented in this repo:
 
 1. The Kubernetes API server is the entry point for Kubernetes management operations, and is hosted as a multi-tenant PaaS service by Microsoft. The API server can be projected in the Virtual Network using Private Link ([article](https://docs.microsoft.com/en-us/azure/aks/private-clusters))
 1. Instead of an external Load Balancer (with a public IP address), use an internal Load Balancer ([article](https://docs.microsoft.com/en-us/azure/aks/internal-lb))
