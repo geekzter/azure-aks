@@ -343,7 +343,7 @@ jobs:
           scriptType: pscore
           scriptLocation: inlineScript
           inlineScript: |
-            ./wait_for_app_gw.ps1 -AksName $(TF_OUT_AKS_NAME) -ResourceGroupName $(TF_OUT_RESOURCE_GROUP)
+            ./wait_for_app_gw.ps1 -ApplicationGatewayName "$(TF_OUT_APPLICATION_GATEWAY_ID)".Split("/")[-1] -AksName $(TF_OUT_AKS_NAME) -ResourceGroupName $(TF_OUT_RESOURCE_GROUP)
           useGlobalConfig: true
           failOnStandardError: true
           powerShellIgnoreLASTEXITCODE: false
