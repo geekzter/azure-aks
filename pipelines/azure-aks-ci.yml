@@ -92,8 +92,6 @@ variables:
     value: '$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
-- name: 'TF_VAR_wait_for_agic'
-  value: ${{ lower(parameters.deploy) }} # Don't wait if we're not deploying applications
 
 - name: 'resourceGroup' 
   value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
@@ -341,9 +339,12 @@ jobs:
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
-          scriptLocation: inlineScript
-          inlineScript: |
-            ./wait_for_app_gw.ps1 -ApplicationGatewayName "$(TF_OUT_APPLICATION_GATEWAY_ID)".Split("/")[-1] -AksName $(TF_OUT_AKS_NAME) -ResourceGroupName $(TF_OUT_RESOURCE_GROUP)
+          scriptLocation: scriptPath
+          scriptPath: ./wait_for_app_gw.ps1
+          arguments:
+            -AksName $(TF_OUT_AKS_NAME) `
+            -ApplicationGatewayName "$(TF_OUT_APPLICATION_GATEWAY_ID)".Split("/")[-1] `
+            -ResourceGroupName $(TF_OUT_RESOURCE_GROUP)
           useGlobalConfig: true
           failOnStandardError: true
           powerShellIgnoreLASTEXITCODE: false

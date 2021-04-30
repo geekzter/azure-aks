@@ -126,7 +126,6 @@ resource azurerm_kubernetes_cluster aks {
 
   role_based_access_control {
     azure_active_directory {
-      # admin_group_object_ids   = 
       managed                  = true
     }
     enabled                    = true

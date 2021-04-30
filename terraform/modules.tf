@@ -51,7 +51,6 @@ module aks_network {
   peer_network_id              = var.peer_network_id
   resource_group_id            = azurerm_resource_group.rg.id
   tags                         = azurerm_resource_group.rg.tags
-  wait_for_agic                = var.wait_for_agic
 
   count                        = var.deploy_aks ? 1 : 0
   depends_on                   = [module.aks]

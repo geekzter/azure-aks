@@ -72,11 +72,6 @@ variable ssh_public_key_file {
   default     = "~/.ssh/id_rsa.pub"
 }
 
-variable wait_for_agic {
-  default     = true
-  type        = bool
-}
-
 variable workspace_location {
   description = "The location/region where the monitoring workspaces will be created."
   default     = "westeurope"

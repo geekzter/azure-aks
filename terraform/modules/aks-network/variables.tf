@@ -13,6 +13,3 @@ variable resource_group_name {}
 variable tags {
   type        = map
 }
-variable wait_for_agic {
-  type       = bool
-}
