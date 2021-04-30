@@ -14,23 +14,13 @@ function Wait-ApplicationGateway(
     $nodeResourceGroupName = $(az aks show -n $AksName -g $ResourceGroupName --query nodeResourceGroup -o tsv)
 
     Write-Host "Waiting for Application Gateway ${ApplicationGatewayName} to finish updating..."
-    do {
-        Start-Sleep -Milliseconds 500
+    $appGWState = (az network application-gateway show -n $ApplicationGatewayName -g $nodeResourceGroupName --query "provisioningState" -o tsv 2>$null)
+    while ((-not $appGWState) -or ($appGWState -ieq "updating")) {
+        Write-Host "Application Gateway ${ApplicationGatewayName} provisioning status is '${appGWState}'..."
+        Start-Sleep -Seconds 10
         $appGWState = (az network application-gateway show -n $ApplicationGatewayName -g $nodeResourceGroupName --query "provisioningState" -o tsv 2>$null)
-        Write-Verbose "Application Gateway ${ApplicationGatewayName} provisioning status is ${appGWState}"
-    } while ((-not $appGWState) -or ($appGWState -ieq "updating"))
-    Write-Host "Application Gateway ${ApplicationGatewayName} provisioning status is ${appGWState}"
-
-    $applicationGatewayIpAddressName = "${ApplicationGatewayName}-appgwpip"
-    az network public-ip show -n $applicationGatewayIpAddressName -g $nodeResourceGroupName -o json
-}
-
-az extension add --name aks-preview 2>$null
-
-if ($ApplicationGatewayName -ieq $(az aks show -n $AksName -g $ResourceGroupName --query "addonProfiles.ingressApplicationGateway.config.applicationGatewayName" -o tsv)) {
-    Wait-ApplicationGateway -AksName $AksName -ResourceGroupName $ResourceGroupName -ApplicationGatewayName $ApplicationGatewayName
-    Write-Host "$ApplicationGatewayName is already configured as add on for $AksName"
-    exit    
+    } 
+    Write-Host "Application Gateway ${ApplicationGatewayName} provisioning status is '${appGWState}'"
 }
 
 Wait-ApplicationGateway -AksName $AksName -ResourceGroupName $ResourceGroupName -ApplicationGatewayName $ApplicationGatewayName
