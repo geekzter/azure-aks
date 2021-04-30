@@ -19,6 +19,7 @@ module aks {
   name                         = local.aks_name
 
   admin_username               = "aksadmin"
+  application_gateway_subnet_id= module.network.application_gateway_subnet_id
   client_object_id             = data.azurerm_client_config.current.object_id
   dns_prefix                   = "ew-aks"
   location                     = var.location
@@ -43,7 +44,7 @@ module aks_network {
   admin_ip_group_id            = module.network.admin_ip_group_id
   aks_id                       = module.aks.0.aks_id
   #application_gateway_id       = module.network.application_gateway_id
-  application_gateway_subnet_id= module.network.application_gateway_subnet_id
+  # application_gateway_subnet_id= module.network.application_gateway_subnet_id
   deploy_agic                  = var.deploy_agic
   firewall_id                  = module.network.firewall_id
   location                     = var.location

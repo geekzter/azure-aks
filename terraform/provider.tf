@@ -1,6 +1,6 @@
 terraform {
   required_providers {
-    azurerm                    = "= 2.56"
+    azurerm                    = "~> 2.57"
     external                   = "~> 2.1"
     helm                       = "~> 1.3"
     http                       = "~> 2.1"
