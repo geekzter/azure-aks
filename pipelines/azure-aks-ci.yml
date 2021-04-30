@@ -30,7 +30,7 @@ parameters:
   - 'On failure'
   - 'On success'
 - name: testReentrance
-  displayName: Test update (run Terraform plan/apply twice)
+  displayName: Test Terraform re-entrance (apply twice)
   type: boolean
   default: true
 - name: unpinTerraform

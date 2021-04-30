@@ -56,10 +56,7 @@ module aks_network {
   wait_for_agic                = var.wait_for_agic
 
   count                        = var.deploy_aks ? 1 : 0
-  depends_on                   = [
-    # module.aks,
-    #module.network
-  ]
+  depends_on                   = [module.aks]
 }
 
 # Confugure Kubernetes
