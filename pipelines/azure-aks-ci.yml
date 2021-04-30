@@ -174,10 +174,13 @@ jobs:
         terraformVersion: '$(terraformConfig.version)'
 
     - ${{ if parameters.unpinTerraformProviders }}:
-      # Unpin version e.g. "= 2.56" -> ">= 2.56"
+      # Unpin version e.g. "= 2.56" -> "~> 2.56"
       - pwsh: |
-          (Get-Content ./provider.tf) -replace " = `" *= +",' = ">= ' | Out-File provider.tf
+          (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
           Get-Content ./provider.tf
+          if (Test-Path .terraform.lock.hcl) {
+            Remove-Item .terraform.lock.hcl -Force
+          }
         displayName: 'Unpin Terraform provider versions'
         workingDirectory: '$(terraformDirectory)'
 
@@ -427,7 +430,7 @@ jobs:
       - Provision
     displayName: 'Tear down & Clean up (${{ lower(parameters.destroy) }})'
     ${{ if eq(parameters.destroy, 'Always') }}:
-      condition: succeededOrFailed()
+      condition: always()
     ${{ if eq(parameters.destroy, 'On failure') }}:
       condition: not(eq(dependencies.Provision.outputs['provisioningResult.result'],'success'))
     ${{ if eq(parameters.destroy, 'On success') }}:
