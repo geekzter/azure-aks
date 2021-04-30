@@ -340,7 +340,7 @@ jobs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
           scriptLocation: scriptPath
-          scriptPath: ./wait_for_app_gw.ps1
+          scriptPath: $(scriptDirectory)/wait_for_app_gw.ps1
           arguments:
             -AksName $(TF_OUT_AKS_NAME) `
             -ApplicationGatewayName "$(TF_OUT_APPLICATION_GATEWAY_ID)".Split("/")[-1] `
