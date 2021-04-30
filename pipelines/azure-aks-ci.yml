@@ -314,6 +314,15 @@ jobs:
         allowTelemetryCollection: true
 
     - task: TerraformCLI@0
+      displayName: 'Terraform apply (update test)'
+      inputs:
+        command: 'apply'
+        workingDirectory: '$(terraformDirectory)'
+        environmentServiceName: '$(subscriptionConnection)'
+        runAzLogin: true
+        allowTelemetryCollection: true
+
+    - task: TerraformCLI@0
       displayName: 'Terraform output'
       inputs:
         command: 'output'
