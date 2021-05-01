@@ -87,7 +87,7 @@ variables:
   value: '$(Build.SourcesDirectory)/terraform'
 - name: 'TF_VAR_resource_prefix'
   value: 'k8s'
-- ${{ if eq(parameters.clear, true) }}:  # Don't reset suffix if we want to keep existing resources
+- ${{ if parameters.clear }}:  # Don't reset suffix if we want to keep existing resources
   - name: 'TF_VAR_resource_suffix'
     value: '$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
@@ -125,7 +125,7 @@ jobs:
     clean: all
 
   steps:
-    - ${{ if eq(parameters.clear, true) }}:
+    - ${{ if parameters.clear }}:
       - task: AzureCLI@2
         name: clear
         displayName: 'Remove conflicting resources from previous runs'
@@ -204,7 +204,7 @@ jobs:
         displayName: 'Publish Terraform workspace'
         artifact: $(terraformArtifactName)
 
-    - ${{ if eq(parameters.clear, true) }}:
+    - ${{ if parameters.clear }}:
       - task: AzureCLI@2
         name: cleanup
         displayName: 'Clear Terraform state'
@@ -237,7 +237,7 @@ jobs:
           failOnStandardError: true
           workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if not(eq(parameters.clear, true)) }}:
+    - ${{ if not(parameters.clear) }}:
       - task: AzureCLI@2
         displayName: 'Restore kubeconfig'
         inputs:
@@ -325,7 +325,7 @@ jobs:
         runAzLogin: true
         allowTelemetryCollection: true
 
-    - ${{ if eq(parameters.deploy, true) }}:
+    - ${{ if parameters.deploy }}:
       - task: KubectlInstaller@0
         displayName: 'Install kubectl'
         condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
@@ -350,7 +350,7 @@ jobs:
           powerShellIgnoreLASTEXITCODE: false
           workingDirectory: '$(scriptDirectory)'
 
-    - ${{ if eq(parameters.deploy, true) }}:
+    - ${{ if parameters.deploy }}:
       - task: Kubernetes@1
         displayName: 'kubectl apply: ASP.NET App'
         condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
@@ -365,7 +365,7 @@ jobs:
           configuration: '$(manifestDirectory)/aspnetapp.yaml'
           secretType: 'generic'
         
-    - ${{ if eq(parameters.deploy, true) }}:
+    - ${{ if parameters.deploy }}:
       - task: Kubernetes@1
         displayName: 'kubectl apply: Voting App'
         condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
@@ -380,7 +380,7 @@ jobs:
           configuration: '$(manifestDirectory)/internal-vote.yaml'
           secretType: 'generic'
 
-    - ${{ if eq(parameters.deploy, true) }}:
+    - ${{ if parameters.deploy }}:
       - task: AzureCLI@2
         condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
         displayName: 'Test applications'
@@ -406,7 +406,7 @@ jobs:
         env:
           KUBECONFIG: variables['KUBE_CONFIG_PATH']
 
-    - ${{ if eq(parameters.testReentrance, true) }}:
+    - ${{ if parameters.testReentrance }}:
       - task: TerraformCLI@0
         displayName: 'Terraform plan (re-entrance test)'
         inputs:
@@ -418,7 +418,7 @@ jobs:
           allowTelemetryCollection: true
           publishPlanResults: 'ci-update'
 
-    - ${{ if eq(parameters.testReentrance, true) }}:
+    - ${{ if parameters.testReentrance }}:
       - task: TerraformCLI@0
         displayName: 'Terraform apply (re-entrance test)'
         inputs:
@@ -537,10 +537,10 @@ jobs:
         failOnStandardError: true
         workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if eq(parameters.clear, true) }}: # Only works if we can identity the suffix and thefore the resource group name
+    - ${{ if parameters.clear }}:
       - task: AzureResourceManagerTemplateDeployment@3
         displayName: 'Delete $(resourceGroup)'
-        condition: failed() # Try this if the previous approach failed
+        condition: failed() # Try this if the previous approach failed. Only works if we can identity the suffix and thefore the resource group name
         inputs:
           deploymentScope: 'Resource Group'
           azureResourceManagerConnection: '$(subscriptionConnection)'
@@ -550,7 +550,7 @@ jobs:
 
     - task: TerraformInstaller@0
       condition: succeededOrFailed()
-      displayName: 'Install terraform'
+      displayName: 'Install Terraform'
       inputs:
         terraformVersion: '$(terraformVersion)'
 
