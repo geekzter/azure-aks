@@ -16,6 +16,7 @@ To constrain connectivity to/from an AKS cluster, the following available measur
 limit-egress-traffic#restrict-egress-traffic-using-azure-firewall))
 1. Application Gateway can be used to manage ingress traffic. There are multiple ways to set this up, by far the simplest is to use the AKS add on. This lets AKS create the Application Gateway and maintain it's configuration ([article](https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing))   
 1. Use [user defined routes](https://docs.microsoft.com/en-us/azure/aks/egress-outboundtype) and an Azure Firewall to manage egress, instead of breaking out to the Internet directly ([article](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall))
+1. To prevent yourself from being boxed in, CI/CD should be able to access the cluster. See [connectivity](#connectivity) below.
 
 Note 2. and 3. are overlapping, you only need one of both.
 
@@ -25,12 +26,12 @@ AKS supports two networking 'modes'. These modes control the IP address allocati
 - [Azure CNI](https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni) uses the same address space for agents as the rest of the virtual network.
 See [comparison](https://docs.microsoft.com/en-us/azure/aks/concepts-network#compare-network-models)
 
-I won't go into detail of these modes, as the network mode is __irrelevant__ for the isolation meassures you need to take. Choosing one over the other does not make a major difference for network isolation. This deployment has been [tested](https://dev.azure.com/ericvan/VDC/_build/latest?definitionId=85&branchName=main) with Azure CNI.
+I won't go into detail of these modes, as the network mode is __irrelevant__ for the isolation measures you need to take. Choosing one over the other does not make a major difference for network isolation. This deployment has been [tested](https://dev.azure.com/ericvan/VDC/_build/latest?definitionId=85&branchName=main) with Azure CNI.
 
 ## Pre-requisites
 ### Tools
 - To get started you need [Git](https://git-scm.com/), [Terraform](https://www.terraform.io/downloads.html) (to get that you can use [tfenv](https://github.com/tfutils/tfenv) on Linux & macOS, [Homebrew](https://github.com/hashicorp/homebrew-tap) on macOS or [chocolatey](https://chocolatey.org/packages/terraform) on Windows)
-- The AKS add on is configured through [PowerShell](https://github.com/PowerShell/PowerShell#get-powershell), as there is no native Terraform support yet.
+- Some scripts require [PowerShell](https://github.com/PowerShell/PowerShell#get-powershell)
 - Application deployment requires [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
 If you're on macOS, you can run `brew bundle` in the repo root to get the required tools, as there is a `Brewfile`. 

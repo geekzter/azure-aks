@@ -10,13 +10,6 @@ variable peer_network_has_gateway {
   type        = bool
 }
 variable resource_group_name {}
-variable subnet_bits {
-  type    = number
-  default = 8
-}
-variable subnets {
-  type = list
-}
 variable tags {
   type        = map
 }

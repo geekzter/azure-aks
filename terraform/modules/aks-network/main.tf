@@ -3,14 +3,14 @@ data azurerm_kubernetes_cluster aks {
   resource_group_name          = element(split("/",var.aks_id),length(split("/",var.aks_id))-5)
 }
 
-data azurerm_firewall iag {
+data azurerm_firewall gateway {
   name                         = element(split("/",var.firewall_id),length(split("/",var.firewall_id))-1)
   resource_group_name          = element(split("/",var.firewall_id),length(split("/",var.firewall_id))-5)
 }
 
-data azurerm_public_ip iag_pip {
-  name                         = element(split("/",data.azurerm_firewall.iag.ip_configuration.0.public_ip_address_id),length(split("/",data.azurerm_firewall.iag.ip_configuration.0.public_ip_address_id))-1)
-  resource_group_name          = element(split("/",data.azurerm_firewall.iag.ip_configuration.0.public_ip_address_id),length(split("/",data.azurerm_firewall.iag.ip_configuration.0.public_ip_address_id))-5)
+data azurerm_public_ip firewall_pip {
+  name                         = element(split("/",data.azurerm_firewall.gateway.ip_configuration.0.public_ip_address_id),length(split("/",data.azurerm_firewall.gateway.ip_configuration.0.public_ip_address_id))-1)
+  resource_group_name          = element(split("/",data.azurerm_firewall.gateway.ip_configuration.0.public_ip_address_id),length(split("/",data.azurerm_firewall.gateway.ip_configuration.0.public_ip_address_id))-5)
 }
 
 data azurerm_subnet nodes_subnet {
@@ -30,6 +30,38 @@ resource azurerm_ip_group api_server {
   location                     = var.location
   resource_group_name          = var.resource_group_name
   cidrs                        = data.azurerm_kubernetes_cluster.aks.api_server_authorized_ip_ranges
+
+  tags                         = var.tags
+}
+
+resource azurerm_private_dns_zone acr {
+  name                         = "privatelink.azurecr.io"
+  resource_group_name          = var.resource_group_name
+}
+resource azurerm_private_dns_zone_virtual_network_link acr {
+  name                         = "${var.resource_group_name}-registry-dns-link"
+  resource_group_name          = var.resource_group_name
+  private_dns_zone_name        = azurerm_private_dns_zone.acr.name
+  virtual_network_id           = var.virtual_network_id
+}
+resource azurerm_private_endpoint acr_endpoint {
+  name                         = "${var.resource_group_name}-registry-endpoint"
+  location                     = var.location
+  resource_group_name          = var.resource_group_name
+  
+  subnet_id                    = var.paas_subnet_id
+
+  private_dns_zone_group {
+    name                      = azurerm_private_dns_zone.acr.name
+    private_dns_zone_ids      = [azurerm_private_dns_zone.acr.id]
+  }  
+
+  private_service_connection {
+    is_manual_connection       = false
+    name                       = "${var.resource_group_name}-registry-endpoint-connection"
+    private_connection_resource_id = var.container_registry_id
+    subresource_names          = ["registry"]
+  }
 
   tags                         = var.tags
 }
