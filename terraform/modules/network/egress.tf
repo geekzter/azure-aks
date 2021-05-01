@@ -232,6 +232,8 @@ resource azurerm_firewall_application_rule_collection aks_app_rules {
     target_fqdns               = [
       "api.snapcraft.io",
       "auth.docker.io",
+      "github.com",
+      "ifconfig.co",
       "motd.ubuntu.com",
       "production.cloudflare.docker.com",
       "registry-1.docker.io",
