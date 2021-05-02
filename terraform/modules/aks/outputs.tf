@@ -2,6 +2,14 @@ output aks_id {
   value = azurerm_kubernetes_cluster.aks.id
 }
 
+output application_gateway_id {
+  value = azurerm_kubernetes_cluster.aks.addon_profile[0].ingress_application_gateway[0].effective_gateway_id
+}
+
+output application_gateway_public_ip {
+  value = data.azurerm_public_ip.application_gateway_public_ip.ip_address
+}
+
 output kube_config {
   value = azurerm_kubernetes_cluster.aks.kube_admin_config_raw
 }

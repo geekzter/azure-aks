@@ -1,9 +1,5 @@
-#aks_sp_application_id          = "00000000-0000-0000-0000-000000000000"
-#aks_sp_application_secret      = "AAAAAAAAAAAAAAAA"
-#aks_sp_object_id               = "00000000-0000-0000-0000-000000000000"
-
-#deploy_agic                    = true
 #deploy_aks                     = true
+#deploy_bastion                 = true
 #configure_kubernetes           = false
 
 #peer_network_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet"

@@ -29,6 +29,18 @@ parameters:
   - Never 
   - 'On failure'
   - 'On success'
+- name: testReentrance
+  displayName: Test Terraform re-entrance (apply twice)
+  type: boolean
+  default: true
+- name: unpinTerraform
+  displayName: Unpin Terraform version
+  type: boolean
+  default: false
+- name: unpinTerraformProviders
+  displayName: Unpin Terraform provider versions
+  type: boolean
+  default: false
 
 trigger: none
 
@@ -69,17 +81,17 @@ variables:
   value: '$(Build.SourcesDirectory)/manifests'
 - name: 'scriptDirectory'
   value: '$(Build.SourcesDirectory)/scripts'
+- name: 'terraformArtifactName'
+  value: 'terraform'
 - name: 'terraformDirectory'
   value: '$(Build.SourcesDirectory)/terraform'
 - name: 'TF_VAR_resource_prefix'
   value: 'k8s'
-- ${{ if eq(parameters.clear, true) }}:  # Don't reset suffix if we want to keep existing resources
+- ${{ if parameters.clear }}:  # Don't reset suffix if we want to keep existing resources
   - name: 'TF_VAR_resource_suffix'
     value: '$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
-- name: 'TF_VAR_wait_for_agic'
-  value: ${{ lower(parameters.deploy) }} # Don't wait if we're not deploying applications
 
 - name: 'resourceGroup' 
   value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
@@ -113,7 +125,7 @@ jobs:
     clean: all
 
   steps:
-    - ${{ if eq(parameters.clear, true) }}:
+    - ${{ if parameters.clear }}:
       - task: AzureCLI@2
         name: clear
         displayName: 'Remove conflicting resources from previous runs'
@@ -139,19 +151,40 @@ jobs:
           failOnStandardError: true
           workingDirectory: '$(terraformDirectory)'
 
-    - pwsh: |
-        $terraformVersion = (Get-Content .terraform-version)
-        Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"    
+    - ${{ if not(parameters.unpinTerraform) }}:
+      - pwsh: |
+          $terraformVersion = (Get-Content .terraform-version)
+          Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"
+          Copy-Item backend.tf.sample backend.tf
+        name: terraformConfig
+        displayName: 'Prepare Terraform config'
+        workingDirectory: '$(terraformDirectory)'
 
-        Copy-Item backend.tf.sample backend.tf
-      name: terraformConfig
-      displayName: 'Prepare Terraform config'
-      workingDirectory: '$(terraformDirectory)'
+    - ${{ if parameters.unpinTerraform }}:
+      - pwsh: |
+          (Get-Content ./provider.tf) -replace "required_version *= `" *(~>|=) +",'required_version = ">= ' | Out-File provider.tf
+          Get-Content ./provider.tf
+          Write-Host "##vso[task.setvariable variable=version;isOutput=true]latest"
+          Copy-Item backend.tf.sample backend.tf
+        name: terraformConfig
+        displayName: 'Prepare Terraform config (latest version)'
+        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformInstaller@0
       displayName: 'Install terraform'
       inputs:
         terraformVersion: '$(terraformConfig.version)'
+
+    - ${{ if parameters.unpinTerraformProviders }}:
+      # Unpin version e.g. "= 2.56" -> "~> 2.56"
+      - pwsh: |
+          (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
+          Get-Content ./provider.tf
+          if (Test-Path .terraform.lock.hcl) {
+            Remove-Item .terraform.lock.hcl -Force
+          }
+        displayName: 'Unpin Terraform provider versions'
+        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
@@ -166,7 +199,12 @@ jobs:
         backendAzureRmKey: 'terraform.tfstate'
         allowTelemetryCollection: true
 
-    - ${{ if eq(parameters.clear, true) }}:
+    - ${{ if ne(parameters.destroy, 'Never') }}:
+      - publish: $(terraformDirectory)
+        displayName: 'Publish Terraform workspace'
+        artifact: $(terraformArtifactName)
+
+    - ${{ if parameters.clear }}:
       - task: AzureCLI@2
         name: cleanup
         displayName: 'Clear Terraform state'
@@ -199,22 +237,20 @@ jobs:
           failOnStandardError: true
           workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if not(eq(parameters.clear, true)) }}:
+    - ${{ if not(parameters.clear) }}:
       - task: AzureCLI@2
         displayName: 'Restore kubeconfig'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
-          # scriptLocation: scriptPath
-          # scriptPath: '$(scriptDirectory)/kube_config.ps1'
           scriptLocation: inlineScript
           inlineScript: |
-            #if ((${env:system.debug} -eq "true") -or ($env:system_debug -eq "true") -or ($env:SYSTEM_DEBUG -eq "true")) {
+            if ((${env:system.debug} -eq "true") -or ($env:system_debug -eq "true") -or ($env:SYSTEM_DEBUG -eq "true")) {
               $DebugPreference       = "Continue"
               $InformationPreference = "Continue"
               $VerbosePreference     = "Continue"
               Set-PSDebug -Trace 2
-            #}
+            }
             ./kube_config.ps1
           addSpnToEnvironment: true
           useGlobalConfig: true
@@ -289,14 +325,32 @@ jobs:
         runAzLogin: true
         allowTelemetryCollection: true
 
-    - ${{ if eq(parameters.deploy, true) }}:
+    - ${{ if parameters.deploy }}:
       - task: KubectlInstaller@0
         displayName: 'Install kubectl'
         condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
         inputs:
           kubectlVersion: 'latest'
 
-    - ${{ if eq(parameters.deploy, true) }}:
+    - ${{ if or(parameters.deploy, parameters.testReentrance) }}:
+      - task: AzureCLI@2
+        displayName: 'Wait for Application Gateway'
+        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_APPLICATION_GATEWAY_ID'],'null'),'null')))
+        inputs:
+          azureSubscription: '$(subscriptionConnection)'
+          scriptType: pscore
+          scriptLocation: scriptPath
+          scriptPath: $(scriptDirectory)/wait_for_app_gw.ps1
+          arguments:
+            -AksName $(TF_OUT_AKS_NAME) `
+            -ApplicationGatewayName "$(TF_OUT_APPLICATION_GATEWAY_ID)".Split("/")[-1] `
+            -ResourceGroupName $(TF_OUT_RESOURCE_GROUP)
+          useGlobalConfig: true
+          failOnStandardError: true
+          powerShellIgnoreLASTEXITCODE: false
+          workingDirectory: '$(scriptDirectory)'
+
+    - ${{ if parameters.deploy }}:
       - task: Kubernetes@1
         displayName: 'kubectl apply: ASP.NET App'
         condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
@@ -311,7 +365,7 @@ jobs:
           configuration: '$(manifestDirectory)/aspnetapp.yaml'
           secretType: 'generic'
         
-    - ${{ if eq(parameters.deploy, true) }}:
+    - ${{ if parameters.deploy }}:
       - task: Kubernetes@1
         displayName: 'kubectl apply: Voting App'
         condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
@@ -326,7 +380,7 @@ jobs:
           configuration: '$(manifestDirectory)/internal-vote.yaml'
           secretType: 'generic'
 
-    - ${{ if eq(parameters.deploy, true) }}:
+    - ${{ if parameters.deploy }}:
       - task: AzureCLI@2
         condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
         displayName: 'Test applications'
@@ -352,6 +406,29 @@ jobs:
         env:
           KUBECONFIG: variables['KUBE_CONFIG_PATH']
 
+    - ${{ if parameters.testReentrance }}:
+      - task: TerraformCLI@0
+        displayName: 'Terraform plan (re-entrance test)'
+        inputs:
+          command: 'plan'
+          workingDirectory: '$(terraformDirectory)'
+          environmentServiceName: '$(subscriptionConnection)'
+          runAzLogin: true
+          commandOptions: '$(terraformVariables.variableOption) -out=ci-update.tfplan'
+          allowTelemetryCollection: true
+          publishPlanResults: 'ci-update'
+
+    - ${{ if parameters.testReentrance }}:
+      - task: TerraformCLI@0
+        displayName: 'Terraform apply (re-entrance test)'
+        inputs:
+          command: 'apply'
+          workingDirectory: '$(terraformDirectory)'
+          environmentServiceName: '$(subscriptionConnection)'
+          runAzLogin: true
+          commandOptions: 'ci-update.tfplan'
+          allowTelemetryCollection: true
+          
     - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - pwsh: |
           Write-Host "##vso[task.setvariable variable=result;isOutput=true]success"
@@ -385,7 +462,7 @@ jobs:
       - Provision
     displayName: 'Tear down & Clean up (${{ lower(parameters.destroy) }})'
     ${{ if eq(parameters.destroy, 'Always') }}:
-      condition: succeededOrFailed()
+      condition: or(always(),canceled())
     ${{ if eq(parameters.destroy, 'On failure') }}:
       condition: not(eq(dependencies.Provision.outputs['provisioningResult.result'],'success'))
     ${{ if eq(parameters.destroy, 'On success') }}:
@@ -393,6 +470,8 @@ jobs:
     timeoutInMinutes: $[ variables['jobTimeOutMinutes'] ]
 
     variables:
+      providerConfig: $[ dependencies.Provision.outputs['providerConfig.content'] ]
+      terraformDirectory: $(Pipeline.Workspace)/$(terraformArtifactName)
       terraformVersion: $[ dependencies.Provision.outputs['terraformConfig.version'] ]
 
     pool:
@@ -458,10 +537,10 @@ jobs:
         failOnStandardError: true
         workingDirectory: '$(terraformDirectory)'
 
-    - ${{ if eq(parameters.clear, true) }}: # Only works if we can identity the suffix and thefore the resource group name
+    - ${{ if parameters.clear }}:
       - task: AzureResourceManagerTemplateDeployment@3
         displayName: 'Delete $(resourceGroup)'
-        condition: failed() # Try this if the previous approach failed
+        condition: failed() # Try this if the previous approach failed. Only works if we can identity the suffix and thefore the resource group name
         inputs:
           deploymentScope: 'Resource Group'
           azureResourceManagerConnection: '$(subscriptionConnection)'
@@ -470,10 +549,14 @@ jobs:
           resourceGroupName: '$(resourceGroup)'
 
     - task: TerraformInstaller@0
-      condition: succeededOrFailed() # Procees clearing Terraform state, even if resources could not be removed
-      displayName: 'Install terraform'
+      condition: succeededOrFailed()
+      displayName: 'Install Terraform'
       inputs:
         terraformVersion: '$(terraformVersion)'
+
+    - download: current
+      displayName: 'Download Terraform directory from previous job'
+      artifact: $(terraformArtifactName)
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'

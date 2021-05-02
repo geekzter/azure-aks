@@ -1,5 +1,5 @@
 variable address_space {
-  default     = "10.32.0.0/16"
+  default     = "10.32.100.0/23"
 }
 
 variable configure_kubernetes {
@@ -8,16 +8,16 @@ variable configure_kubernetes {
   description = "Whether to configure Kubernetes using the Terraform Kubernetes provider"
 }
 
-variable deploy_agic {
-  type        = bool
-  default     = true
-  description = "Whether to deploy AKS Application Gateway Ingress Controller Add On"
-}
-
 variable deploy_aks {
   type        = bool
   default     = true
   description = "Whether to deploy AKS & Kubernetes. False will deploy network infrastructure only."
+}
+
+variable deploy_bastion {
+  type        = bool
+  default     = false
+  description = "Whether to deploy managed bastion"
 }
 
 variable kube_config_path {
@@ -70,11 +70,6 @@ variable run_id {
 variable ssh_public_key_file {
   type        = string
   default     = "~/.ssh/id_rsa.pub"
-}
-
-variable wait_for_agic {
-  default     = true
-  type        = bool
 }
 
 variable workspace_location {

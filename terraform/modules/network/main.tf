@@ -25,27 +25,37 @@ resource azurerm_virtual_network network {
   tags                         = var.tags
 }
 
-resource azurerm_subnet iag_subnet {
+resource azurerm_subnet firewall_subnet {
   name                         = "AzureFirewallSubnet"
   virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = var.resource_group_name
-  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],10,0)]
+  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],3,0)] # /26, assuming network is /23
 }
 resource azurerm_subnet waf_subnet {
   name                         = "ApplicationGatewaySubnet"
   virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = var.resource_group_name
-  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],10,1)]
+  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],3,1)] # /26, assuming network is /23
 }
-
-resource azurerm_subnet subnet {
-  name                         = var.subnets[count.index]
+resource azurerm_subnet bastion_subnet {
+  name                         = "AzureBastionSubnet"
   virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = var.resource_group_name
-  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],var.subnet_bits,count.index+1)]
+  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],3,2)] # /26, assuming network is /23
+}
+resource azurerm_subnet paas_subnet {
+  name                         = "PrivateEndpoints"
+  virtual_network_name         = azurerm_virtual_network.network.name
+  resource_group_name          = var.resource_group_name
+  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],3,3)] # /24, assuming network is /23
   enforce_private_link_endpoint_network_policies = true
-
-  count                        = length(var.subnets)
+}
+resource azurerm_subnet nodes_subnet {
+  name                         = "KubernetesClusterNodes"
+  virtual_network_name         = azurerm_virtual_network.network.name
+  resource_group_name          = var.resource_group_name
+  address_prefixes             = [cidrsubnet(azurerm_virtual_network.network.address_space[0],1,1)] # /24, assuming network is /23
+  enforce_private_link_endpoint_network_policies = true
 }
 
 resource azurerm_route_table user_defined_routes {
@@ -62,7 +72,7 @@ resource azurerm_route_table user_defined_routes {
     name                       = "InternetViaFW"
     address_prefix             = "0.0.0.0/0"
     next_hop_type              = "VirtualAppliance"
-    next_hop_in_ip_address     = azurerm_firewall.iag.ip_configuration.0.private_ip_address
+    next_hop_in_ip_address     = azurerm_firewall.gateway.ip_configuration.0.private_ip_address
   }
 
   # AKS (in kubelet network mode) may add routes Terraform is not aware off
@@ -76,10 +86,8 @@ resource azurerm_route_table user_defined_routes {
 }
 
 resource azurerm_subnet_route_table_association user_defined_routes {
-  subnet_id                    = azurerm_subnet.subnet[count.index].id
+  subnet_id                    = azurerm_subnet.nodes_subnet.id
   route_table_id               = azurerm_route_table.user_defined_routes.id
-
-  count                        = length(var.subnets)
 }
 
 data azurerm_virtual_network peered_network {

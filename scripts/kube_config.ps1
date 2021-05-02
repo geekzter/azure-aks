@@ -8,7 +8,6 @@ try {
         kubectl config view
         kubectl cluster-info
         kubectl get nodes
-        kubectl get ingress
     } else {
         Write-Warning "Terraform did not provision K8s yet" >2&1
     }

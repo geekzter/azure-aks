@@ -2,8 +2,11 @@ output address_space {
   value       = var.address_space
 }
 
+output application_gateway_id {
+  value       = var.deploy_aks ? module.aks.0.application_gateway_id : null
+}
 output application_gateway_public_ip {
-  value       = var.deploy_agic ? module.aks_network.0.application_gateway_public_ip : 0
+  value       = var.deploy_aks ? module.aks.0.application_gateway_public_ip : null
 }
 
 output aks_name {
@@ -27,7 +30,6 @@ output kube_config_base64 {
   sensitive   = true
   value       = var.deploy_aks ? base64encode(module.aks.0.kube_config) : null
 }
-
 output kube_config_path {
   # Return machine independent relative path
   value       = local.kube_config_relative_path
@@ -61,7 +63,6 @@ output peered_network {
 output resource_group {
   value       = azurerm_resource_group.rg.name
 }
-
 output resource_suffix {
   value       = local.suffix
 }

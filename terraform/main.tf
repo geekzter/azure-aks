@@ -42,25 +42,24 @@ resource azurerm_resource_group rg {
   name                         = "${lower(var.resource_prefix)}-${lower(local.environment)}-${lower(local.suffix)}"
   location                     = var.location
 
-  tags                         = map(
-    "application",               "Kubernetes",
-    "environment",               local.environment,
-    "provisioner",               "terraform",
-    "repository",                "azure-aks",
-    "runid",                     var.run_id,
-    "shutdown",                  "true",
-    "suffix",                    local.suffix,
-    "workspace",                 terraform.workspace,
-  )
+  tags                         = {
+    application                = "Kubernetes"
+    environment                = local.environment
+    provisioner                = "terraform"
+    repository                 = "azure-aks"
+    runid                      = var.run_id
+    shutdown                   = "true"
+    suffix                     = local.suffix
+    workspace                  = terraform.workspace
+  }
 }
 
 resource azurerm_container_registry acr {
   name                         = "${lower(var.resource_prefix)}reg${local.suffix}"
   resource_group_name          = azurerm_resource_group.rg.name
   location                     = var.location
-  sku                          = "Basic"
+  sku                          = "Premium"
   admin_enabled                = true
-# georeplication_locations     = ["East US", "West Europe"]
  
   tags                         = azurerm_resource_group.rg.tags
 }

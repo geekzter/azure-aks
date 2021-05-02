@@ -82,6 +82,10 @@ resource azurerm_kubernetes_cluster aks {
     http_application_routing {
       enabled                  = false # Use AGIC instead
     }
+    ingress_application_gateway {
+      enabled                  = true
+      subnet_id                = var.application_gateway_subnet_id
+    }
     kube_dashboard {
       # Deprecated for Kubernetes version >= 1.19.0.
       enabled                  = false
@@ -109,10 +113,7 @@ resource azurerm_kubernetes_cluster aks {
 
   identity {
     type                       = "UserAssigned"
-    # BUG:  https://github.com/terraform-providers/terraform-provider-azurerm/issues/10406
-    # user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
-    # HACK: https://github.com/terraform-providers/terraform-provider-azurerm/issues/10406#issuecomment-820198428
-    user_assigned_identity_id  = replace(azurerm_user_assigned_identity.aks_identity.id,"resourceGroups","resourcegroups")
+    user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
   }
 
   network_profile {
@@ -125,7 +126,6 @@ resource azurerm_kubernetes_cluster aks {
 
   role_based_access_control {
     azure_active_directory {
-      # admin_group_object_ids   = 
       managed                  = true
     }
     enabled                    = true
@@ -148,6 +148,16 @@ resource azurerm_kubernetes_cluster aks {
 
 data azurerm_private_endpoint_connection api_server_endpoint {
   name                         = "kube-apiserver"
+  resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
+}
+
+data azurerm_application_gateway app_gw {
+  name                         = split("/",azurerm_kubernetes_cluster.aks.addon_profile[0].ingress_application_gateway[0].effective_gateway_id)[8]
+  resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
+}
+
+data azurerm_public_ip application_gateway_public_ip {
+  name                         = "${data.azurerm_application_gateway.app_gw.name}-appgwpip"
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
 }
 
