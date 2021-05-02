@@ -16,6 +16,7 @@ To constrain connectivity to/from an AKS cluster, the following available measur
 limit-egress-traffic#restrict-egress-traffic-using-azure-firewall))
 1. Application Gateway can be used to manage ingress traffic. There are multiple ways to set this up, by far the simplest is to use the AKS add on. This lets AKS create the Application Gateway and maintain it's configuration ([article](https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing))   
 1. Use [user defined routes](https://docs.microsoft.com/en-us/azure/aks/egress-outboundtype) and an Azure Firewall to manage egress, instead of breaking out to the Internet directly ([article](https://docs.microsoft.com/en-us/azure/aks/limit-egress-traffic#restrict-egress-traffic-using-azure-firewall))
+1. Connect Azure Container Registry directly to the Virtual Network using a Private Endpoint.
 1. To prevent yourself from being boxed in, CI/CD should be able to access the cluster. See [connectivity](#connectivity) below.
 
 Note 2. and 3. are overlapping, you only need one of both.
