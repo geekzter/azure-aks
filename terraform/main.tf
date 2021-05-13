@@ -63,6 +63,36 @@ resource azurerm_container_registry acr {
  
   tags                         = azurerm_resource_group.rg.tags
 }
+resource azurerm_monitor_diagnostic_setting acr {
+  name                         = "${azurerm_container_registry.acr.name}-logs"
+  target_resource_id           = azurerm_container_registry.acr.id
+  log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
+
+  log {
+    category                   = "ContainerRegistryRepositoryEvents"
+    enabled                    = true
+
+    retention_policy {
+      enabled                  = false
+    }
+  }
+  log {
+    category                   = "ContainerRegistryLoginEvents"
+    enabled                    = true
+
+    retention_policy {
+      enabled                  = false
+    }
+  }
+
+  metric {
+    category                   = "AllMetrics"
+
+    retention_policy {
+      enabled                  = false
+    }
+  }
+} 
 
 resource azurerm_log_analytics_workspace log_analytics {
   name                         = "${azurerm_resource_group.rg.name}-logs"

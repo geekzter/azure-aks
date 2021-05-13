@@ -3,24 +3,6 @@ locals {
   resource_group_name          = element(split("/",var.resource_group_id),length(split("/",var.resource_group_id))-1)
 }
 
-data azurerm_log_analytics_workspace log_analytics {
-  name                         = element(split("/",var.log_analytics_workspace_id),length(split("/",var.log_analytics_workspace_id))-1)
-  resource_group_name          = element(split("/",var.log_analytics_workspace_id),length(split("/",var.log_analytics_workspace_id))-5)
-}
-
-resource azurerm_log_analytics_solution log_analytics_solution {
-  solution_name                = "ContainerInsights" 
-  location                     = var.location
-  resource_group_name          = data.azurerm_log_analytics_workspace.log_analytics.resource_group_name
-  workspace_resource_id        = var.log_analytics_workspace_id
-  workspace_name               = data.azurerm_log_analytics_workspace.log_analytics.name
-
-  plan {
-    publisher                  = "Microsoft"
-    product                    = "OMSGallery/ContainerInsights"
-  }
-} 
-
 data azurerm_subnet nodes_subnet {
   name                         = element(split("/",var.node_subnet_id),length(split("/",var.node_subnet_id))-1)
   virtual_network_name         = element(split("/",var.node_subnet_id),length(split("/",var.node_subnet_id))-3)
@@ -159,6 +141,13 @@ data azurerm_application_gateway app_gw {
 data azurerm_public_ip application_gateway_public_ip {
   name                         = "${data.azurerm_application_gateway.app_gw.name}-appgwpip"
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
+}
+
+data azurerm_resources scale_sets {
+  resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
+  type                         = "Microsoft.Compute/virtualMachineScaleSets"
+
+  required_tags                = azurerm_kubernetes_cluster.aks.tags
 }
 
 # Export kube_config for kubectl
