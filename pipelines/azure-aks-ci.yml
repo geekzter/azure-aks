@@ -91,9 +91,6 @@ variables:
   value: '$(Build.SourcesDirectory)/terraform'
 - name: 'TF_VAR_resource_prefix'
   value: 'k8s'
-- ${{ if parameters.clear }}:  # Don't reset suffix if we want to keep existing resources
-  - name: 'TF_VAR_resource_suffix'
-    value: '$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
 - name: 'resourceGroup' 
@@ -133,8 +130,10 @@ jobs:
           unpinTerraformProviders: true
       maxParallel: 1
 
-  ${{ if not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
-    variables:
+  variables:
+    ${{ if parameters.clear }}:  # Don't reset suffix if we want to keep existing resources
+      TF_VAR_resource_suffix: '$(Build.BuildId)'
+    ${{ if not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
       unpinTerraformProviders: ${{ parameters.unpinTerraformProviders }}
 
   workspace:
@@ -450,6 +449,7 @@ jobs:
           
     - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - pwsh: |
+          Write-Host "Indicating success for job '$(Agent.JobName)'"
           Write-Host "##vso[task.setvariable variable=result;isOutput=true]success"
         name: provisioningResult
         displayName: 'Indicate provisioning success'
