@@ -98,8 +98,6 @@ variables:
   value: '$(Build.BuildId)'
 - name: 'resourceGroup' 
   value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
-- name: useStrategy 
-  value: ${{ or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}
 
 jobs:
 - job: 'Provision'
@@ -126,7 +124,7 @@ jobs:
     name: '$(pool)'
     vmImage: $(vmImage)
 
-  ${{ if variables.useStrategy }}:
+  ${{ or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}:
     strategy:
       matrix:
         pinTerraformProviders:
@@ -135,7 +133,7 @@ jobs:
           unpinTerraformProviders: true
       maxParallel: 1
 
-  ${{ if not(variables.useStrategy) }}:
+  ${{ not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
     variables:
       unpinTerraformProviders: ${{ parameters.unpinTerraformProviders }}
 
