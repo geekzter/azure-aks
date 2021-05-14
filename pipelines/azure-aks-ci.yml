@@ -41,6 +41,10 @@ parameters:
   displayName: Unpin Terraform provider versions
   type: boolean
   default: false
+- name: useStrategy
+  displayName: Use strategy to test provider versions
+  type: boolean
+  default: false
 
 trigger: none
 
@@ -95,8 +99,7 @@ variables:
 - name: 'resourceGroup' 
   value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
 - name: useStrategy 
-  # value: ${{ not(eq(variables['Build.Reason'], 'Manual')) }}
-  value: true
+  value: ${{ or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}
 
 jobs:
 - job: 'Provision'
