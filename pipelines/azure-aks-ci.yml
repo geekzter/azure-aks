@@ -191,16 +191,17 @@ jobs:
       inputs:
         terraformVersion: '$(terraformConfig.version)'
 
-    - ${{ if variables.unpinTerraformProviders }}:
-      # Unpin version e.g. "= 2.56" -> "~> 2.56"
-      - pwsh: |
-          (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
-          Get-Content ./provider.tf
-          if (Test-Path .terraform.lock.hcl) {
-            Remove-Item .terraform.lock.hcl -Force
-          }
-        displayName: 'Unpin Terraform provider versions'
-        workingDirectory: '$(terraformDirectory)'
+    # - ${{ if variables.unpinTerraformProviders }}:
+    # Unpin version e.g. "= 2.56" -> "~> 2.56"
+    - pwsh: |
+        (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
+        Get-Content ./provider.tf
+        if (Test-Path .terraform.lock.hcl) {
+          Remove-Item .terraform.lock.hcl -Force
+        }
+      displayName: 'Unpin Terraform provider versions'
+      condition: $(unpinTerraformProviders)
+      workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
