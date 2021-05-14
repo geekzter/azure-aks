@@ -127,10 +127,10 @@ jobs:
   ${{ if or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}:
     strategy:
       matrix:
-        pinTerraformProviders:
-          unpinTerraformProviders: false
         unpinTerraformProviders:
           unpinTerraformProviders: true
+        pinTerraformProviders:
+          unpinTerraformProviders: false
       maxParallel: 1
 
   ${{ if not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
