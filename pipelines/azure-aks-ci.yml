@@ -200,7 +200,7 @@ jobs:
           Remove-Item .terraform.lock.hcl -Force
         }
       displayName: 'Unpin Terraform provider versions'
-      condition: $(unpinTerraformProviders)
+      enabled: $(unpinTerraformProviders)
       workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
