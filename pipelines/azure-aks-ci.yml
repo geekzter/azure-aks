@@ -95,7 +95,8 @@ variables:
 - name: 'resourceGroup' 
   value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
 - name: useStrategy 
-  value: ${{ or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'Schedule')) }}
+  # value: ${{ not(eq(variables['Build.Reason'], 'Manual')) }}
+  value: true
 
 jobs:
 - job: 'Provision'
@@ -122,8 +123,18 @@ jobs:
     name: '$(pool)'
     vmImage: $(vmImage)
 
-  variables:
-    unpinTerraformProviders: ${{ parameters.unpinTerraformProviders }}
+  ${{ if variables.useStrategy }}:
+    strategy:
+      matrix:
+        pinTerraformProviders:
+          unpinTerraformProviders: false
+        unpinTerraformProviders:
+          unpinTerraformProviders: true
+      maxParallel: 2
+
+  ${{ if not(variables.useStrategy) }}:
+    variables:
+      unpinTerraformProviders: ${{ parameters.unpinTerraformProviders }}
 
   workspace:
     clean: all
@@ -310,128 +321,128 @@ jobs:
         allowTelemetryCollection: true
         publishPlanResults: 'ci'
 
-    - task: TerraformCLI@0
-      displayName: 'Terraform apply'
-      inputs:
-        command: 'apply'
-        workingDirectory: '$(terraformDirectory)'
-        environmentServiceName: '$(subscriptionConnection)'
-        runAzLogin: true
-        commandOptions: 'ci.tfplan'
-        allowTelemetryCollection: true
+    # - task: TerraformCLI@0
+    #   displayName: 'Terraform apply'
+    #   inputs:
+    #     command: 'apply'
+    #     workingDirectory: '$(terraformDirectory)'
+    #     environmentServiceName: '$(subscriptionConnection)'
+    #     runAzLogin: true
+    #     commandOptions: 'ci.tfplan'
+    #     allowTelemetryCollection: true
 
-    - task: TerraformCLI@0
-      displayName: 'Terraform output'
-      inputs:
-        command: 'output'
-        workingDirectory: '$(terraformDirectory)'
-        environmentServiceName: '$(subscriptionConnection)'
-        runAzLogin: true
-        allowTelemetryCollection: true
+    # - task: TerraformCLI@0
+    #   displayName: 'Terraform output'
+    #   inputs:
+    #     command: 'output'
+    #     workingDirectory: '$(terraformDirectory)'
+    #     environmentServiceName: '$(subscriptionConnection)'
+    #     runAzLogin: true
+    #     allowTelemetryCollection: true
 
-    - ${{ if parameters.deploy }}:
-      - task: KubectlInstaller@0
-        displayName: 'Install kubectl'
-        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
-        inputs:
-          kubectlVersion: 'latest'
+    # - ${{ if parameters.deploy }}:
+    #   - task: KubectlInstaller@0
+    #     displayName: 'Install kubectl'
+    #     condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+    #     inputs:
+    #       kubectlVersion: 'latest'
 
-    - ${{ if or(parameters.deploy, parameters.testReentrance) }}:
-      - task: AzureCLI@2
-        displayName: 'Wait for Application Gateway'
-        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_APPLICATION_GATEWAY_ID'],'null'),'null')))
-        inputs:
-          azureSubscription: '$(subscriptionConnection)'
-          scriptType: pscore
-          scriptLocation: scriptPath
-          scriptPath: $(scriptDirectory)/wait_for_app_gw.ps1
-          arguments:
-            -AksName $(TF_OUT_AKS_NAME) `
-            -ApplicationGatewayName "$(TF_OUT_APPLICATION_GATEWAY_ID)".Split("/")[-1] `
-            -ResourceGroupName $(TF_OUT_RESOURCE_GROUP)
-          useGlobalConfig: true
-          failOnStandardError: true
-          powerShellIgnoreLASTEXITCODE: false
-          workingDirectory: '$(scriptDirectory)'
+    # - ${{ if or(parameters.deploy, parameters.testReentrance) }}:
+    #   - task: AzureCLI@2
+    #     displayName: 'Wait for Application Gateway'
+    #     condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_APPLICATION_GATEWAY_ID'],'null'),'null')))
+    #     inputs:
+    #       azureSubscription: '$(subscriptionConnection)'
+    #       scriptType: pscore
+    #       scriptLocation: scriptPath
+    #       scriptPath: $(scriptDirectory)/wait_for_app_gw.ps1
+    #       arguments:
+    #         -AksName $(TF_OUT_AKS_NAME) `
+    #         -ApplicationGatewayName "$(TF_OUT_APPLICATION_GATEWAY_ID)".Split("/")[-1] `
+    #         -ResourceGroupName $(TF_OUT_RESOURCE_GROUP)
+    #       useGlobalConfig: true
+    #       failOnStandardError: true
+    #       powerShellIgnoreLASTEXITCODE: false
+    #       workingDirectory: '$(scriptDirectory)'
 
-    - ${{ if parameters.deploy }}:
-      - task: Kubernetes@1
-        displayName: 'kubectl apply: ASP.NET App'
-        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
-        inputs:
-          connectionType: 'Azure Resource Manager'
-          azureSubscriptionEndpoint: '$(subscriptionConnection)'
-          azureResourceGroup: '$(TF_OUT_RESOURCE_GROUP)'
-          kubernetesCluster: '$(TF_OUT_AKS_NAME)'
-          useClusterAdmin: true
-          command: 'apply'
-          useConfigurationFile: true
-          configuration: '$(manifestDirectory)/aspnetapp.yaml'
-          secretType: 'generic'
+    # - ${{ if parameters.deploy }}:
+    #   - task: Kubernetes@1
+    #     displayName: 'kubectl apply: ASP.NET App'
+    #     condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+    #     inputs:
+    #       connectionType: 'Azure Resource Manager'
+    #       azureSubscriptionEndpoint: '$(subscriptionConnection)'
+    #       azureResourceGroup: '$(TF_OUT_RESOURCE_GROUP)'
+    #       kubernetesCluster: '$(TF_OUT_AKS_NAME)'
+    #       useClusterAdmin: true
+    #       command: 'apply'
+    #       useConfigurationFile: true
+    #       configuration: '$(manifestDirectory)/aspnetapp.yaml'
+    #       secretType: 'generic'
         
-    - ${{ if parameters.deploy }}:
-      - task: Kubernetes@1
-        displayName: 'kubectl apply: Voting App'
-        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
-        inputs:
-          connectionType: 'Azure Resource Manager'
-          azureSubscriptionEndpoint: '$(subscriptionConnection)'
-          azureResourceGroup: '$(TF_OUT_RESOURCE_GROUP)'
-          kubernetesCluster: '$(TF_OUT_AKS_NAME)'
-          useClusterAdmin: true
-          command: 'apply'
-          useConfigurationFile: true
-          configuration: '$(manifestDirectory)/internal-vote.yaml'
-          secretType: 'generic'
+    # - ${{ if parameters.deploy }}:
+    #   - task: Kubernetes@1
+    #     displayName: 'kubectl apply: Voting App'
+    #     condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+    #     inputs:
+    #       connectionType: 'Azure Resource Manager'
+    #       azureSubscriptionEndpoint: '$(subscriptionConnection)'
+    #       azureResourceGroup: '$(TF_OUT_RESOURCE_GROUP)'
+    #       kubernetesCluster: '$(TF_OUT_AKS_NAME)'
+    #       useClusterAdmin: true
+    #       command: 'apply'
+    #       useConfigurationFile: true
+    #       configuration: '$(manifestDirectory)/internal-vote.yaml'
+    #       secretType: 'generic'
 
-    - ${{ if parameters.deploy }}:
-      - task: AzureCLI@2
-        condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
-        displayName: 'Test applications'
-        inputs:
-          azureSubscription: '$(subscriptionConnection)'
-          scriptType: pscore
-          scriptLocation: inlineScript
-          inlineScript: |
-            # Propagate pipeline Service Principal as Terraform variables
-            $env:ARM_CLIENT_ID       ??= $env:servicePrincipalId
-            $env:ARM_CLIENT_SECRET   ??= $env:servicePrincipalKey
-            $env:ARM_TENANT_ID       ??= $env:tenantId
-            # Get from Azure CLI context
-            $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
-            $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)              
+    # - ${{ if parameters.deploy }}:
+    #   - task: AzureCLI@2
+    #     condition: and(succeeded(), not(eq(coalesce(variables['TF_OUT_AKS_NAME'],'null'),'null')), eq(variables['TF_OUT_PEERED_NETWORK'],'true'))
+    #     displayName: 'Test applications'
+    #     inputs:
+    #       azureSubscription: '$(subscriptionConnection)'
+    #       scriptType: pscore
+    #       scriptLocation: inlineScript
+    #       inlineScript: |
+    #         # Propagate pipeline Service Principal as Terraform variables
+    #         $env:ARM_CLIENT_ID       ??= $env:servicePrincipalId
+    #         $env:ARM_CLIENT_SECRET   ??= $env:servicePrincipalKey
+    #         $env:ARM_TENANT_ID       ??= $env:tenantId
+    #         # Get from Azure CLI context
+    #         $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
+    #         $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)              
 
-            ./deploy_app.ps1
-          addSpnToEnvironment: true
-          useGlobalConfig: true
-          failOnStandardError: true
-          powerShellIgnoreLASTEXITCODE: false
-          workingDirectory: '$(scriptDirectory)'
-        env:
-          KUBECONFIG: variables['KUBE_CONFIG_PATH']
+    #         ./deploy_app.ps1
+    #       addSpnToEnvironment: true
+    #       useGlobalConfig: true
+    #       failOnStandardError: true
+    #       powerShellIgnoreLASTEXITCODE: false
+    #       workingDirectory: '$(scriptDirectory)'
+    #     env:
+    #       KUBECONFIG: variables['KUBE_CONFIG_PATH']
 
-    - ${{ if parameters.testReentrance }}:
-      - task: TerraformCLI@0
-        displayName: 'Terraform plan (re-entrance test)'
-        inputs:
-          command: 'plan'
-          workingDirectory: '$(terraformDirectory)'
-          environmentServiceName: '$(subscriptionConnection)'
-          runAzLogin: true
-          commandOptions: '$(terraformVariables.variableOption) -out=ci-update.tfplan'
-          allowTelemetryCollection: true
-          publishPlanResults: 'ci-update'
+    # - ${{ if parameters.testReentrance }}:
+    #   - task: TerraformCLI@0
+    #     displayName: 'Terraform plan (re-entrance test)'
+    #     inputs:
+    #       command: 'plan'
+    #       workingDirectory: '$(terraformDirectory)'
+    #       environmentServiceName: '$(subscriptionConnection)'
+    #       runAzLogin: true
+    #       commandOptions: '$(terraformVariables.variableOption) -out=ci-update.tfplan'
+    #       allowTelemetryCollection: true
+    #       publishPlanResults: 'ci-update'
 
-    - ${{ if parameters.testReentrance }}:
-      - task: TerraformCLI@0
-        displayName: 'Terraform apply (re-entrance test)'
-        inputs:
-          command: 'apply'
-          workingDirectory: '$(terraformDirectory)'
-          environmentServiceName: '$(subscriptionConnection)'
-          runAzLogin: true
-          commandOptions: 'ci-update.tfplan'
-          allowTelemetryCollection: true
+    # - ${{ if parameters.testReentrance }}:
+    #   - task: TerraformCLI@0
+    #     displayName: 'Terraform apply (re-entrance test)'
+    #     inputs:
+    #       command: 'apply'
+    #       workingDirectory: '$(terraformDirectory)'
+    #       environmentServiceName: '$(subscriptionConnection)'
+    #       runAzLogin: true
+    #       commandOptions: 'ci-update.tfplan'
+    #       allowTelemetryCollection: true
           
     - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - pwsh: |
