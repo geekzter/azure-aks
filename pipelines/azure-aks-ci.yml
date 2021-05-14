@@ -291,7 +291,6 @@ jobs:
         }
         # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
         $env:TF_VAR_address_space   ??= "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
-        $env:TF_VAR_resource_suffix ??= "$(Build.BuildId)"
 
         # List environment variables
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
