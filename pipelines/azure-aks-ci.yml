@@ -133,7 +133,7 @@ jobs:
           unpinTerraformProviders: false
         unpinTerraformProviders:
           unpinTerraformProviders: true
-      maxParallel: 2
+      maxParallel: 1
 
   ${{ if not(variables.useStrategy) }}:
     variables:
