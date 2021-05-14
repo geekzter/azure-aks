@@ -124,7 +124,7 @@ jobs:
     name: '$(pool)'
     vmImage: $(vmImage)
 
-  ${{ or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}:
+  ${{ if or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}:
     strategy:
       matrix:
         pinTerraformProviders:
@@ -133,7 +133,7 @@ jobs:
           unpinTerraformProviders: true
       maxParallel: 1
 
-  ${{ not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
+  ${{ if not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
     variables:
       unpinTerraformProviders: ${{ parameters.unpinTerraformProviders }}
 
