@@ -91,10 +91,11 @@ variables:
   value: '$(Build.SourcesDirectory)/terraform'
 - name: 'TF_VAR_resource_prefix'
   value: 'k8s'
+- ${{ if parameters.clear }}:  # Don't reset suffix if we want to keep existing resources
+  - name: 'TF_VAR_resource_suffix'
+    value: '$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
-- name: 'resourceGroup' 
-  value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
 
 jobs:
 - job: 'Provision'
@@ -125,16 +126,17 @@ jobs:
     strategy:
       matrix:
         pinTerraformProviders:
+          TF_VAR_resource_suffix: '$(Build.BuildId)p'
           unpinTerraformProviders: false
         unpinTerraformProviders:
+          TF_VAR_resource_suffix: '$(Build.BuildId)u'
           unpinTerraformProviders: true
       maxParallel: 1
 
   variables:
-    ${{ if parameters.clear }}:  # Don't reset suffix if we want to keep existing resources
-      TF_VAR_resource_suffix: '$(Build.BuildId)'
     ${{ if not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
       unpinTerraformProviders: ${{ parameters.unpinTerraformProviders }}
+    resourceGroup: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
 
   workspace:
     clean: all
