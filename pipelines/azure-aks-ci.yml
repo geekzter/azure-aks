@@ -491,7 +491,10 @@ jobs:
     variables:
       providerConfig: $[ dependencies.Provision.outputs['providerConfig.content'] ]
       terraformDirectory: $(Pipeline.Workspace)/$(terraformArtifactName)
-      terraformVersion: $[ dependencies.Provision.outputs['terraformConfig.version'] ]
+      ${{ if not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
+        terraformVersion: $[ dependencies.Provision.outputs['terraformConfig.version'] ]
+      ${{ if or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}:
+        terraformVersion: $[ dependencies.Provision.outputs['pinTerraformProviders.terraformConfig.version'] ]
 
     pool:
       name: '$(pool)'
