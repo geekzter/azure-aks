@@ -127,10 +127,10 @@ jobs:
   ${{ if or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}:
     strategy:
       matrix:
-        unpinTerraformProviders:
-          unpinTerraformProviders: true
         pinTerraformProviders:
           unpinTerraformProviders: false
+        unpinTerraformProviders:
+          unpinTerraformProviders: true
       maxParallel: 1
 
   ${{ if not(or(parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual')))) }}:
@@ -191,17 +191,18 @@ jobs:
       inputs:
         terraformVersion: '$(terraformConfig.version)'
 
-    # - ${{ if variables.unpinTerraformProviders }}:
-    # Unpin version e.g. "= 2.56" -> "~> 2.56"
-    - pwsh: |
-        (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
-        Get-Content ./provider.tf
-        if (Test-Path .terraform.lock.hcl) {
-          Remove-Item .terraform.lock.hcl -Force
-        }
-      displayName: 'Unpin Terraform provider versions'
-      condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'true'))
-      workingDirectory: '$(terraformDirectory)'
+    - ${{ if or(parameters.unpinTerraformProviders,parameters.useStrategy,not(eq(variables['Build.Reason'], 'Manual'))) }}:
+      # Unpin version e.g. "= 2.56" -> "~> 2.56"
+      - pwsh: |
+          (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
+          Get-Content ./provider.tf
+          if (Test-Path .terraform.lock.hcl) {
+            Remove-Item .terraform.lock.hcl -Force
+          }
+        displayName: 'Unpin Terraform provider versions'
+        # condition required as '- ${{ if ' template expression is not evaluated when using a strategy
+        condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'true'))
+        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
@@ -219,6 +220,7 @@ jobs:
     - ${{ if ne(parameters.destroy, 'Never') }}:
       - publish: $(terraformDirectory)
         displayName: 'Publish Terraform workspace'
+        condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'false'))
         artifact: $(terraformArtifactName)
 
     - ${{ if parameters.clear }}:
