@@ -92,9 +92,10 @@ variables:
     value: '$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
-
 - name: 'resourceGroup' 
   value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
+- name: useStrategy 
+  value: ${{ or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.Reason'], 'Schedule')) }}
 
 jobs:
 - job: 'Provision'
@@ -120,6 +121,9 @@ jobs:
   pool:
     name: '$(pool)'
     vmImage: $(vmImage)
+
+  variables:
+    unpinTerraformProviders: ${{ parameters.unpinTerraformProviders }}
 
   workspace:
     clean: all
@@ -175,7 +179,7 @@ jobs:
       inputs:
         terraformVersion: '$(terraformConfig.version)'
 
-    - ${{ if parameters.unpinTerraformProviders }}:
+    - ${{ if variables.unpinTerraformProviders }}:
       # Unpin version e.g. "= 2.56" -> "~> 2.56"
       - pwsh: |
           (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
