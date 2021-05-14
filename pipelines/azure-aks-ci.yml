@@ -221,7 +221,7 @@ jobs:
     - ${{ if ne(parameters.destroy, 'Never') }}:
       - publish: $(terraformDirectory)
         displayName: 'Publish Terraform workspace'
-        condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'false'))
+        condition: and(succeeded(), or(eq(variables['unpinTerraformProviders'],'false'),ne(parameters.unpinTerraformProviders, 'Strategy')))
         artifact: $(terraformArtifactName)
 
     - ${{ if parameters.clear }}:
