@@ -34,6 +34,10 @@ output kubernetes_version {
   value = azurerm_kubernetes_cluster.aks.kubernetes_version
 }
 
+output node_pool_scale_set_id {
+  value = data.azurerm_resources.scale_sets.resources[0].id
+}
+
 output node_resource_group {
   value = azurerm_kubernetes_cluster.aks.node_resource_group
 }

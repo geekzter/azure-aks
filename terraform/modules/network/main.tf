@@ -24,7 +24,28 @@ resource azurerm_virtual_network network {
   
   tags                         = var.tags
 }
+resource azurerm_monitor_diagnostic_setting network {
+  name                         = "${azurerm_virtual_network.network.name}-logs"
+  target_resource_id           = azurerm_virtual_network.network.id
+  log_analytics_workspace_id   = var.log_analytics_workspace_id
 
+  log {
+    category                   = "VMProtectionAlerts"
+    enabled                    = true
+
+    retention_policy {
+      enabled                  = false
+    }
+  }
+
+  metric {
+    category                   = "AllMetrics"
+
+    retention_policy {
+      enabled                  = false
+    }
+  }
+}
 resource azurerm_subnet firewall_subnet {
   name                         = "AzureFirewallSubnet"
   virtual_network_name         = azurerm_virtual_network.network.name

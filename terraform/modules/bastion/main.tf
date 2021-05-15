@@ -7,6 +7,44 @@ resource azurerm_public_ip bastion_pip {
 
   tags                         = var.tags
 }
+resource azurerm_monitor_diagnostic_setting bastion_pip {
+  name                         = "${azurerm_public_ip.bastion_pip.name}-logs"
+  target_resource_id           = azurerm_public_ip.bastion_pip.id
+  log_analytics_workspace_id   = var.log_analytics_workspace_id
+
+  log {
+    category                   = "DDoSProtectionNotifications"
+    enabled                    = true
+
+    retention_policy {
+      enabled                  = false
+    }
+  }
+  log {
+    category                   = "DDoSMitigationFlowLogs"
+    enabled                    = true
+
+    retention_policy {
+      enabled                  = false
+    }
+  }
+  log {
+    category                   = "DDoSMitigationReports"
+    enabled                    = true
+
+    retention_policy {
+      enabled                  = false
+    }
+  }  
+
+  metric {
+    category                   = "AllMetrics"
+
+    retention_policy {
+      enabled                  = false
+    }
+  }
+} 
 
 resource azurerm_bastion_host managed_bastion {
   name                         = "${var.resource_group_name}-bastion"

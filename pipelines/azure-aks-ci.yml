@@ -39,8 +39,12 @@ parameters:
   default: false
 - name: unpinTerraformProviders
   displayName: Unpin Terraform provider versions
-  type: boolean
-  default: false
+  type: string
+  default: No
+  values:
+  - No
+  - Yes
+  - Strategy
 
 trigger: none
 
@@ -87,14 +91,8 @@ variables:
   value: '$(Build.SourcesDirectory)/terraform'
 - name: 'TF_VAR_resource_prefix'
   value: 'k8s'
-- ${{ if parameters.clear }}:  # Don't reset suffix if we want to keep existing resources
-  - name: 'TF_VAR_resource_suffix'
-    value: '$(Build.BuildId)'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
-
-- name: 'resourceGroup' 
-  value: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
 
 jobs:
 - job: 'Provision'
@@ -120,6 +118,25 @@ jobs:
   pool:
     name: '$(pool)'
     vmImage: $(vmImage)
+
+  ${{ if or(eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual'))) }}:
+    strategy:
+      matrix:
+        pinTerraformProviders:
+          TF_VAR_resource_suffix: '$(Build.BuildId)p'
+          unpinTerraformProviders: false
+        unpinTerraformProviders:
+          TF_VAR_resource_suffix: '$(Build.BuildId)u'
+          unpinTerraformProviders: true
+      maxParallel: 1
+
+  variables:
+    ${{ if not(or(eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual')))) }}:
+      # Not runnig as strategy
+      ${{ if parameters.clear }}:  # Don't reset suffix if we want to keep existing resources
+        TF_VAR_resource_suffix: '$(Build.BuildId)'
+      unpinTerraformProviders: ${{ eq(parameters.unpinTerraformProviders, 'Yes') }}
+    resourceGroup: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
 
   workspace:
     clean: all
@@ -175,7 +192,7 @@ jobs:
       inputs:
         terraformVersion: '$(terraformConfig.version)'
 
-    - ${{ if parameters.unpinTerraformProviders }}:
+    - ${{ if or(eq(parameters.unpinTerraformProviders, 'Yes'),eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual'))) }}:
       # Unpin version e.g. "= 2.56" -> "~> 2.56"
       - pwsh: |
           (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
@@ -184,6 +201,8 @@ jobs:
             Remove-Item .terraform.lock.hcl -Force
           }
         displayName: 'Unpin Terraform provider versions'
+        # condition required as '- ${{ if ' template expression is not evaluated when using a strategy
+        condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'true'))
         workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
@@ -202,6 +221,8 @@ jobs:
     - ${{ if ne(parameters.destroy, 'Never') }}:
       - publish: $(terraformDirectory)
         displayName: 'Publish Terraform workspace'
+        ${{ if or(eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual'))) }}:
+          condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'false'))
         artifact: $(terraformArtifactName)
 
     - ${{ if parameters.clear }}:
@@ -271,7 +292,6 @@ jobs:
         }
         # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
         $env:TF_VAR_address_space   ??= "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
-        $env:TF_VAR_resource_suffix ??= "$(Build.BuildId)"
 
         # List environment variables
         Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
@@ -431,6 +451,7 @@ jobs:
           
     - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - pwsh: |
+          Write-Host "Indicating success for job '$(Agent.JobName)'"
           Write-Host "##vso[task.setvariable variable=result;isOutput=true]success"
         name: provisioningResult
         displayName: 'Indicate provisioning success'
@@ -472,7 +493,10 @@ jobs:
     variables:
       providerConfig: $[ dependencies.Provision.outputs['providerConfig.content'] ]
       terraformDirectory: $(Pipeline.Workspace)/$(terraformArtifactName)
-      terraformVersion: $[ dependencies.Provision.outputs['terraformConfig.version'] ]
+      ${{ if not(or(eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual')))) }}:
+        terraformVersion: $[ dependencies.Provision.outputs['terraformConfig.version'] ]
+      ${{ if or(eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual'))) }}:
+        terraformVersion: $[ dependencies.Provision.outputs['pinTerraformProviders.terraformConfig.version'] ]
 
     pool:
       name: '$(pool)'
