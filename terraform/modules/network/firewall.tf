@@ -83,7 +83,7 @@ resource azurerm_firewall gateway {
   dns_servers                  = var.dns_servers
 
   # Make zone redundant
-  zones                        = [1,2,3]
+  zones                        = [1,2]
 
   ip_configuration {
     name                       = "firewall_ipconfig"
