@@ -148,11 +148,6 @@ resource random_string application_gateway_domain_label {
 }
 
 resource null_resource application_gateway_domain_label {
-  # Always run this
-  triggers                     = {
-    always_run                 = timestamp()
-  }
-
   provisioner local-exec {
     command                    = "az network public-ip update --dns-name ${random_string.application_gateway_domain_label.result} -n ${data.azurerm_application_gateway.app_gw.name}-appgwpip -g ${azurerm_kubernetes_cluster.aks.node_resource_group} --subscription ${data.azurerm_subscription.primary.subscription_id} --query 'dnsSettings'"
   }
