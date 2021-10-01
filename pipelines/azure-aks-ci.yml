@@ -317,7 +317,7 @@ jobs:
 
     - task: AzureCLI@2
       displayName: 'Terraform plan & apply'
-      name: terraform
+      name: apply
       inputs:
         azureSubscription: '$(subscriptionConnection)'
         scriptType: pscore
@@ -338,11 +338,13 @@ jobs:
         workingDirectory: '$(scriptDirectory)'
 
     - pwsh: |
-        echo "terraform.aks_name=$(terraform.aks_name)"
-        echo "terraform.peered_network=$(terraform.peered_network)"
+        echo "terraform.resource_group=$(apply.resource_group)"
+        echo "terraform.aks_name=$(apply.aks_name)"
+        echo "terraform.peered_network=$(apply.peered_network)"
     - pwsh: |
-        echo "terraform.aks_name=$(terraform.aks_name)"
-        echo "terraform.peered_network=$(terraform.peered_network)"
+        echo "terraform.resource_group=$(apply.resource_group)"
+        echo "terraform.aks_name=$(apply.aks_name)"
+        echo "terraform.peered_network=$(apply.peered_network)"
       condition: ne(coalesce(variables['terraform.aks_name'],'null'),'null')
 
     - ${{ if parameters.deploy }}:
@@ -362,9 +364,9 @@ jobs:
           scriptLocation: scriptPath
           scriptPath: $(scriptDirectory)/wait_for_app_gw.ps1
           arguments:
-            -AksName $(terraform.aks_name) `
-            -ApplicationGatewayName "$(terraform.application_gateway_id)".Split("/")[-1] `
-            -ResourceGroupName $(terraform.resource_group)
+            -AksName $(apply.aks_name) `
+            -ApplicationGatewayName "$(apply.application_gateway_id)".Split("/")[-1] `
+            -ResourceGroupName $(apply.resource_group)
           useGlobalConfig: true
           failOnStandardError: true
           powerShellIgnoreLASTEXITCODE: false
@@ -377,8 +379,8 @@ jobs:
         inputs:
           connectionType: 'Azure Resource Manager'
           azureSubscriptionEndpoint: '$(subscriptionConnection)'
-          azureResourceGroup: '$(terraform.resource_group)'
-          kubernetesCluster: '$(terraform.aks_name)'
+          azureResourceGroup: '$(apply.resource_group)'
+          kubernetesCluster: '$(apply.aks_name)'
           useClusterAdmin: true
           command: 'apply'
           useConfigurationFile: true
@@ -392,8 +394,8 @@ jobs:
         inputs:
           connectionType: 'Azure Resource Manager'
           azureSubscriptionEndpoint: '$(subscriptionConnection)'
-          azureResourceGroup: '$(terraform.resource_group)'
-          kubernetesCluster: '$(terraform.aks_name)'
+          azureResourceGroup: '$(apply.resource_group)'
+          kubernetesCluster: '$(apply.aks_name)'
           useClusterAdmin: true
           command: 'apply'
           useConfigurationFile: true
