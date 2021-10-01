@@ -25,7 +25,7 @@ output firewall_fqdn {
 }
 
 output kube_config {
-  # sensitive   = true
+  sensitive   = true
   value       = var.deploy_aks ? module.aks.0.kube_config : null
 }
 
