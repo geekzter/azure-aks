@@ -144,6 +144,15 @@ function Get-TerraformOutput (
     }
 }
 
+function Get-TerraformWorkspace () {
+    Push-Location (Get-TerraformDirectory)
+    try {
+        return $(terraform workspace show)
+    } finally {
+        Pop-Location
+    }
+}
+
 function Invoke (
     [string]$cmd
 ) {
