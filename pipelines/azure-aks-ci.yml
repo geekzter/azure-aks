@@ -337,6 +337,14 @@ jobs:
         failOnStandardError: true
         workingDirectory: '$(scriptDirectory)'
 
+    - pwsh: |
+        echo "terraform.aks_name=$(terraform.aks_name)"
+        echo "terraform.peered_network=$(terraform.peered_network)"
+    - pwsh: |
+        echo "terraform.aks_name=$(terraform.aks_name)"
+        echo "terraform.peered_network=$(terraform.peered_network)"
+      condition: ne(coalesce(variables['terraform.aks_name'],'null'),'null')
+
     - ${{ if parameters.deploy }}:
       - task: KubectlInstaller@0
         displayName: 'Install kubectl'
