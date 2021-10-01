@@ -2,6 +2,9 @@ output address_space {
   value       = var.address_space
 }
 
+output application_gateway_fqdn {
+  value       = var.deploy_aks ? module.aks.0.application_gateway_fqdn : null
+}
 output application_gateway_id {
   value       = var.deploy_aks ? module.aks.0.application_gateway_id : null
 }

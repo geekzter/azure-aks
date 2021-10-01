@@ -18,8 +18,8 @@ try {
     $ilbIPAddress = Get-LoadBalancerIPAddress -KubernetesService azure-vote-front
 
     # AGIC Demo: https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing#deploy-a-sample-application-using-agic
-    $agicIPAddress = (Get-TerraformOutput application_gateway_public_ip)
-    if ($agicIPAddress) {
+    $agicFQDN = (Get-TerraformOutput application_gateway_fqdn)
+    if ($agicFQDN) {
         Write-Host "`nDeploying ASP.NET App..."
         kubectl apply -f (Join-Path $manifestsDirectory aspnetapp.yaml)
         kubectl describe ingress aspnetapp
@@ -33,8 +33,8 @@ try {
     } else {
         Write-Warning "Internal Load Balancer not found"
     }
-    if ($agicIPAddress) {
-        $agicUrl = "http://${agicIPAddress}/"
+    if ($agicFQDN) {
+        $agicUrl = "http://${agicFQDN}/"
         Test-App $agicUrl
     } else {
         Write-Warning "Application Gateway Ingress Controller not found"
@@ -42,4 +42,3 @@ try {
 } finally {
     Pop-Location
 }
-

@@ -3,6 +3,8 @@ locals {
   resource_group_name          = element(split("/",var.resource_group_id),length(split("/",var.resource_group_id))-1)
 }
 
+data azurerm_subscription primary {}
+
 data azurerm_subnet nodes_subnet {
   name                         = element(split("/",var.node_subnet_id),length(split("/",var.node_subnet_id))-1)
   virtual_network_name         = element(split("/",var.node_subnet_id),length(split("/",var.node_subnet_id))-3)
@@ -137,10 +139,32 @@ data azurerm_application_gateway app_gw {
   name                         = split("/",azurerm_kubernetes_cluster.aks.addon_profile[0].ingress_application_gateway[0].effective_gateway_id)[8]
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
 }
+resource random_string application_gateway_domain_label {
+  length                      = 16
+  upper                       = false
+  lower                       = true
+  number                      = false
+  special                     = false
+}
+
+resource null_resource application_gateway_domain_label {
+  # Always run this
+  triggers                     = {
+    always_run                 = timestamp()
+  }
+
+  provisioner local-exec {
+    command                    = "az network public-ip update --dns-name ${random_string.application_gateway_domain_label.result} -n ${data.azurerm_application_gateway.app_gw.name}-appgwpip -g ${azurerm_kubernetes_cluster.aks.node_resource_group} --subscription ${data.azurerm_subscription.primary.subscription_id} --query 'dnsSettings'"
+  }
+
+  depends_on                   = [random_string.application_gateway_domain_label]
+}
 
 data azurerm_public_ip application_gateway_public_ip {
   name                         = "${data.azurerm_application_gateway.app_gw.name}-appgwpip"
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
+
+  depends_on                   = [null_resource.application_gateway_domain_label]
 }
 
 data azurerm_resources scale_sets {
