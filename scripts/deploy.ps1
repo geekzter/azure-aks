@@ -46,6 +46,7 @@ $script:ErrorActionPreference = "Stop"
 $workspace = Get-TerraformWorkspace
 $planFile  = "${workspace}.tfplan".ToLower()
 $varsFile  = "${workspace}.tfvars".ToLower()
+$pipeline  = ![string]::IsNullOrEmpty($env:AGENT_VERSION)
 $inAutomation = ($env:TF_IN_AUTOMATION -ieq "true")
 if (($workspace -ieq "prod") -and $Force) {
     $Force = $false
