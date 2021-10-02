@@ -345,19 +345,19 @@ jobs:
         echo "terraform.resource_group=$(apply.resource_group)"
         echo "terraform.aks_name=$(apply.aks_name)"
         echo "terraform.peered_network=$(apply.peered_network)"
-      condition: ne(coalesce(variables['terraform.aks_name'],'null'),'null')
+      condition: ne(coalesce(variables['apply.aks_name'],'null'),'null')
 
     - ${{ if parameters.deploy }}:
       - task: KubectlInstaller@0
         displayName: 'Install kubectl'
-        condition: and(succeeded(), not(eq(coalesce(variables['terraform.aks_name'],'null'),'null')), eq(variables['terraform.peered_network'],'true'))
+        condition: and(succeeded(), not(eq(coalesce(variables['apply.aks_name'],'null'),'null')), eq(variables['apply.peered_network'],'true'))
         inputs:
           kubectlVersion: 'latest'
 
     - ${{ if or(parameters.deploy, parameters.testReentrance) }}:
       - task: AzureCLI@2
         displayName: 'Wait for Application Gateway'
-        condition: and(succeeded(), not(eq(coalesce(variables['terraform.application_gateway_id'],'null'),'null')))
+        condition: and(succeeded(), not(eq(coalesce(variables['apply.application_gateway_id'],'null'),'null')))
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
@@ -375,7 +375,7 @@ jobs:
     - ${{ if parameters.deploy }}:
       - task: Kubernetes@1
         displayName: 'kubectl apply: ASP.NET App'
-        condition: and(succeeded(), not(eq(coalesce(variables['terraform.aks_name'],'null'),'null')), eq(variables['terraform.peered_network'],'true'))
+        condition: and(succeeded(), not(eq(coalesce(variables['apply.aks_name'],'null'),'null')), eq(variables['apply.peered_network'],'true'))
         inputs:
           connectionType: 'Azure Resource Manager'
           azureSubscriptionEndpoint: '$(subscriptionConnection)'
@@ -390,7 +390,7 @@ jobs:
     - ${{ if parameters.deploy }}:
       - task: Kubernetes@1
         displayName: 'kubectl apply: Voting App'
-        condition: and(succeeded(), not(eq(coalesce(variables['terraform.aks_name'],'null'),'null')), eq(variables['terraform.peered_network'],'true'))
+        condition: and(succeeded(), not(eq(coalesce(variables['apply.aks_name'],'null'),'null')), eq(variables['apply.peered_network'],'true'))
         inputs:
           connectionType: 'Azure Resource Manager'
           azureSubscriptionEndpoint: '$(subscriptionConnection)'
@@ -404,7 +404,7 @@ jobs:
 
     - ${{ if parameters.deploy }}:
       - task: AzureCLI@2
-        condition: and(succeeded(), not(eq(coalesce(variables['terraform.aks_name'],'null'),'null')), eq(variables['terraform.peered_network'],'true'))
+        condition: and(succeeded(), not(eq(coalesce(variables['apply.aks_name'],'null'),'null')), eq(variables['apply.peered_network'],'true'))
         displayName: 'Test applications'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
