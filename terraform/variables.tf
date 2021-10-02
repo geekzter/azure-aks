@@ -20,6 +20,10 @@ variable deploy_bastion {
   description = "Whether to deploy managed bastion"
 }
 
+variable dns_host_suffix {
+  default                      = "mycicd"
+}
+
 variable kube_config_path {
   description = "Path to the kube config file (e.g. .kube/config)"
   default     = ""

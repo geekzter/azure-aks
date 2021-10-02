@@ -31,6 +31,7 @@ module aks {
   application_gateway_subnet_id= module.network.application_gateway_subnet_id
   client_object_id             = data.azurerm_client_config.current.object_id
   dns_prefix                   = "ew-aks"
+  dns_host_suffix              = var.dns_host_suffix
   location                     = var.location
   kube_config_path             = local.kube_config_absolute_path
   kubernetes_version           = var.kubernetes_version

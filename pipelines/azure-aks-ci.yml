@@ -337,18 +337,6 @@ jobs:
         failOnStandardError: true
         workingDirectory: '$(scriptDirectory)'
 
-    - pwsh: |
-        echo "terraform.resource_group=$(terraformApply.resource_group)"
-        echo "terraform.aks_name=$(terraformApply.aks_name)"
-        echo "terraform.peered_network=$(terraformApply.peered_network)"
-      displayName: 'Terraform output debug'
-    - pwsh: |
-        echo "terraform.resource_group=$(terraformApply.resource_group)"
-        echo "terraform.aks_name=$(terraformApply.aks_name)"
-        echo "terraform.peered_network=$(terraformApply.peered_network)"
-      condition: ne(coalesce(variables['terraformApply.aks_name'],'null'),'null')
-      displayName: 'Terraform output debug'
-
     - ${{ if parameters.deploy }}:
       - task: KubectlInstaller@0
         displayName: 'Install kubectl'

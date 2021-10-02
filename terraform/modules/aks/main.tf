@@ -140,11 +140,15 @@ data azurerm_application_gateway app_gw {
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
 }
 resource random_string application_gateway_domain_label {
-  length                      = 16
+  length                      = 10
   upper                       = false
   lower                       = true
   number                      = false
   special                     = false
+}
+
+locals {
+  application_gateway_domain_label = "${random_string.application_gateway_domain_label.result}${var.dns_host_suffix}"
 }
 
 resource null_resource application_gateway_domain_label {

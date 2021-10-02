@@ -2,6 +2,7 @@ variable admin_username {}
 variable application_gateway_subnet_id {}
 variable client_object_id {}
 variable dns_prefix {}
+variable dns_host_suffix {}
 variable kube_config_path {}
 variable kubernetes_version {}
 variable location {}
