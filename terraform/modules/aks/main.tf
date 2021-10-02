@@ -140,7 +140,7 @@ data azurerm_application_gateway app_gw {
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
 }
 resource random_string application_gateway_domain_label {
-  length                      = 10
+  length                      = min(16,63-length(var.dns_host_suffix))
   upper                       = false
   lower                       = true
   number                      = false
@@ -153,7 +153,7 @@ locals {
 
 resource null_resource application_gateway_domain_label {
   provisioner local-exec {
-    command                    = "az network public-ip update --dns-name ${random_string.application_gateway_domain_label.result} -n ${data.azurerm_application_gateway.app_gw.name}-appgwpip -g ${azurerm_kubernetes_cluster.aks.node_resource_group} --subscription ${data.azurerm_subscription.primary.subscription_id} --query 'dnsSettings'"
+    command                    = "az network public-ip update --dns-name ${local.application_gateway_domain_label} -n ${data.azurerm_application_gateway.app_gw.name}-appgwpip -g ${azurerm_kubernetes_cluster.aks.node_resource_group} --subscription ${data.azurerm_subscription.primary.subscription_id} --query 'dnsSettings'"
   }
 
   depends_on                   = [random_string.application_gateway_domain_label]
