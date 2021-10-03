@@ -80,6 +80,8 @@ resource azurerm_kubernetes_cluster aks {
     }
   }
 
+  automatic_channel_upgrade    = "stable"
+
   default_node_pool {
     availability_zones         = [1,2,3]
     enable_auto_scaling        = true
