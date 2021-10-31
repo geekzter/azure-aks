@@ -1,6 +1,6 @@
 data http local_public_ip {
 # Get public IP address of the machine running this terraform template
-  url                          = "http://ipinfo.io/ip"
+  url                          = "https://ipinfo.io/ip"
 }
 
 data http local_public_prefix {
