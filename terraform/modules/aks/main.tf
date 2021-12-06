@@ -102,6 +102,8 @@ resource azurerm_kubernetes_cluster aks {
     user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
   }
 
+  local_account_disabled       = true
+
   network_profile {
     network_plugin             = "azure"
     network_policy             = "azure"
