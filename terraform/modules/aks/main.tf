@@ -102,7 +102,7 @@ resource azurerm_kubernetes_cluster aks {
     user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
   }
 
-  local_account_disabled       = true
+  # local_account_disabled       = true # Will become default in 1.24
 
   network_profile {
     network_plugin             = "azure"
@@ -114,6 +114,8 @@ resource azurerm_kubernetes_cluster aks {
 
   role_based_access_control {
     azure_active_directory {
+      admin_group_object_ids   = [var.client_object_id]
+      azure_rbac_enabled       = true
       managed                  = true
     }
     enabled                    = true
