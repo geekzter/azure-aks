@@ -29,7 +29,7 @@ provider azurerm {
 # Use AKS to prepare Helm provider
 provider helm {
   kubernetes {
-    config_path                = var.deploy_aks ? local.kube_config_absolute_path : ""
+    # config_path                = var.deploy_aks ? local.kube_config_absolute_path : ""
     host                       = var.deploy_aks ? module.aks.0.kubernetes_host : ""
     client_certificate         = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_certificate) : ""
     client_key                 = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_key) : ""
@@ -39,7 +39,7 @@ provider helm {
 
 # Use AKS to prepare Kubernetes provider
 provider kubernetes {
-  config_path                  = var.deploy_aks ? local.kube_config_absolute_path : ""
+  # config_path                  = var.deploy_aks ? local.kube_config_absolute_path : ""
   host                         = var.deploy_aks ? module.aks.0.kubernetes_host : ""
   client_certificate           = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_certificate) : ""
   client_key                   = var.deploy_aks ? base64decode(module.aks.0.kubernetes_client_key) : ""
