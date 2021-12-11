@@ -46,6 +46,8 @@ parameters:
   - Yes
   - Strategy
 
+name: $(Date:yyyyMMdd)$(Rev:.r)-${{ parameters.workspace }}-destroy:${{ parameters.destroy }}
+
 trigger: none
 
 pr:
