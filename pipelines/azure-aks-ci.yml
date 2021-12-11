@@ -46,7 +46,7 @@ parameters:
   - Yes
   - Strategy
 
-name: $(Date:yyyyMMdd)$(Rev:.r)-${{ parameters.workspace }}
+name: $(Date:yyyyMMdd)$(Rev:.r)-$(SourceBranchName)-${{ parameters.workspace }}
 
 trigger: none
 
