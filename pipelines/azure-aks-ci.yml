@@ -75,6 +75,8 @@ variables:
   value: 180
 - name: 'repository'
   value: 'azure-aks'
+- name: AZURE_CORE_ONLY_SHOW_ERRORS
+  value: 'true'
 - name: AZURE_EXTENSION_USE_DYNAMIC_INSTALL
   value: 'yes_without_prompt'
 - name: 'TF_IN_AUTOMATION'
