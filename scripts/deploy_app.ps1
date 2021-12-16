@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 param ( 
-    [parameter(Mandatory=$true)][bool]$Deploy=$true,
-    [parameter(Mandatory=$true)][bool]$Test=$true
+    [parameter(Mandatory=$false)][bool]$Deploy=$true,
+    [parameter(Mandatory=$false)][bool]$Test=$true
 )
 
 . (Join-Path $PSScriptRoot functions.ps1)
