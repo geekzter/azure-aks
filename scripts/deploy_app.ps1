@@ -16,7 +16,7 @@ try {
 
     #az aks get-credentials --name $aksName --resource-group $resourceGroup -a --overwrite-existing
 
-    Prepare-KubeConfig -Workspace $(terraform workspace show)
+    $null = Prepare-KubeConfig -Workspace $(terraform workspace show)
     kubectl config use-context $aksName
 
     # ILB Demo: https://docs.microsoft.com/en-us/azure/aks/internal-lb
@@ -37,17 +37,19 @@ try {
     }
 
     # Test after deployment, this should be faster
-    if ($ilbIPAddress) {
-        $ilbUrl = "http://${ilbIPAddress}/"
-        Test-App $ilbUrl
-    } else {
-        Write-Warning "Internal Load Balancer not found"
-    }
-    if ($agicFQDN) {
-        $agicUrl = "http://${agicFQDN}/"
-        Test-App $agicUrl
-    } else {
-        Write-Warning "Application Gateway Ingress Controller not found"
+    if ($Test) {
+        if ($ilbIPAddress) {
+            $ilbUrl = "http://${ilbIPAddress}/"
+            Test-App $ilbUrl
+        } else {
+            Write-Warning "Internal Load Balancer not found"
+        }
+        if ($agicFQDN) {
+            $agicUrl = "http://${agicFQDN}/"
+            Test-App $agicUrl
+        } else {
+            Write-Warning "Application Gateway Ingress Controller not found"
+        }
     }
 } finally {
     Pop-Location

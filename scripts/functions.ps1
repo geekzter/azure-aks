@@ -165,7 +165,7 @@ function Invoke (
     }
 }
 
-function Prepare-KubeConfig(
+function Prepare-KubeConfig (
     [parameter(Mandatory=$true)][string]$Workspace    
 ) {
     $kubeConfig = (Get-TerraformOutput kube_config)
