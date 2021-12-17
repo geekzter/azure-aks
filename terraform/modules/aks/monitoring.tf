@@ -139,4 +139,12 @@ resource azurerm_monitor_diagnostic_setting scale_set {
       enabled                  = false
     }
   }
+
+  lifecycle {
+    ignore_changes             = [
+      # New values are not known after plan stage, but won't change
+      name,
+      target_resource_id 
+    ]
+  }
 } 
