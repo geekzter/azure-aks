@@ -9,9 +9,6 @@ $manifestsDirectory = (Join-Path (Split-Path $PSScriptRoot -Parent) manifests)
 
 Get-Tools
 
-# Application http request should succeed, don't worry about anything else
-$kubectlstderrthreshold = 3
-
 try {
     ChangeTo-TerraformDirectory
     $aksName = (Get-TerraformOutput aks_name)
@@ -20,13 +17,13 @@ try {
     #az aks get-credentials --name $aksName --resource-group $resourceGroup -a --overwrite-existing
 
     $null = Prepare-KubeConfig -Workspace $(terraform workspace show)
-    kubectl config use-context $aksName --stderrthreshold $kubectlstderrthreshold
+    kubectl config use-context $aksName 2>&1
 
     # ILB Demo: https://docs.microsoft.com/en-us/azure/aks/internal-lb
     if ($Deploy) {
         Write-Host "`nDeploying Voting App..."
-        kubectl apply -f (Join-Path $manifestsDirectory internal-vote.yaml) --stderrthreshold $kubectlstderrthreshold
-        kubectl get service azure-vote-front --stderrthreshold $kubectlstderrthreshold
+        kubectl apply -f (Join-Path $manifestsDirectory internal-vote.yaml) 2>&1
+        kubectl get service azure-vote-front 2>&1
     }
     $ilbIPAddress = Get-LoadBalancerIPAddress -KubernetesService azure-vote-front
 
@@ -34,9 +31,9 @@ try {
     $agicFQDN = (Get-TerraformOutput application_gateway_fqdn)
     if ($agicFQDN -and $Deploy) {
         Write-Host "`nDeploying ASP.NET App..."
-        kubectl apply -f (Join-Path $manifestsDirectory aspnetapp.yaml) --stderrthreshold $kubectlstderrthreshold
-        kubectl describe ingress aspnetapp --stderrthreshold $kubectlstderrthreshold
-        kubectl get ingress --stderrthreshold $kubectlstderrthreshold
+        kubectl apply -f (Join-Path $manifestsDirectory aspnetapp.yaml) 2>&1
+        kubectl describe ingress aspnetapp 2>&1
+        kubectl get ingress 2>&1
     }
 
     # Test after deployment, this should be faster
