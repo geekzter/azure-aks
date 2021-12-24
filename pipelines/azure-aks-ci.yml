@@ -397,6 +397,29 @@ jobs:
           configuration: '$(manifestDirectory)/internal-vote.yaml'
           secretType: 'generic'
 
+    - ${{ if parameters.testReentrance }}:
+      - task: AzureCLI@2
+        displayName: 'Terraform plan & apply (re-entrance test)'
+        inputs:
+          azureSubscription: '$(subscriptionConnection)'
+          scriptType: pscore
+          scriptLocation: inlineScript
+          inlineScript: |
+            # Propagate pipeline Service Principal as Terraform variables
+            $env:ARM_CLIENT_ID       ??= $env:servicePrincipalId
+            $env:ARM_CLIENT_SECRET   ??= $env:servicePrincipalKey
+            $env:ARM_TENANT_ID       ??= $env:tenantId
+            # Get from Azure CLI context
+            $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
+            $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)
+
+            ./deploy.ps1 -apply -force
+          addSpnToEnvironment: true
+          useGlobalConfig: true
+          failOnStandardError: true
+          retryCountOnTaskFailure: 3
+          workingDirectory: '$(scriptDirectory)'
+          
     - ${{ if parameters.deploy }}:
       - task: AzureCLI@2
         condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
@@ -423,29 +446,6 @@ jobs:
         env:
           KUBECONFIG: variables['KUBE_CONFIG_PATH']
 
-    - ${{ if parameters.testReentrance }}:
-      - task: AzureCLI@2
-        displayName: 'Terraform plan & apply (re-entrance test)'
-        inputs:
-          azureSubscription: '$(subscriptionConnection)'
-          scriptType: pscore
-          scriptLocation: inlineScript
-          inlineScript: |
-            # Propagate pipeline Service Principal as Terraform variables
-            $env:ARM_CLIENT_ID       ??= $env:servicePrincipalId
-            $env:ARM_CLIENT_SECRET   ??= $env:servicePrincipalKey
-            $env:ARM_TENANT_ID       ??= $env:tenantId
-            # Get from Azure CLI context
-            $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
-            $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)
-
-            ./deploy.ps1 -apply -force
-          addSpnToEnvironment: true
-          useGlobalConfig: true
-          failOnStandardError: true
-          retryCountOnTaskFailure: 3
-          workingDirectory: '$(scriptDirectory)'
-          
     - ${{ if not(eq(parameters.destroy, 'Never')) }}:
       - pwsh: |
           Write-Host "Indicating success for job '$(Agent.JobName)'"

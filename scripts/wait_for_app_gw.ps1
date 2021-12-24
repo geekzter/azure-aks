@@ -15,7 +15,8 @@ function Wait-ApplicationGateway(
     $timeoutSeconds = 300
 
     Write-Host "Waiting for AKS $AksName to finish provisioning..."
-    az aks wait -g $ResourceGroupName -n $AksName --created --updated --interval $intervalSeconds --timeout $timeoutSeconds
+    az aks wait -g $ResourceGroupName -n $AksName --created --interval $intervalSeconds --timeout $timeoutSeconds
+    az aks wait -g $ResourceGroupName -n $AksName --updated --interval $intervalSeconds --timeout $timeoutSeconds
 
     $nodeResourceGroupName = $(az aks show -n $AksName -g $ResourceGroupName --query nodeResourceGroup -o tsv)
 
