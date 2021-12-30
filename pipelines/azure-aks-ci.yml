@@ -367,40 +367,40 @@ jobs:
           powerShellIgnoreLASTEXITCODE: false
           workingDirectory: '$(scriptDirectory)'
 
-    - ${{ if parameters.deploy }}:
-      - task: Kubernetes@1
-        displayName: 'kubectl apply: ASP.NET App'
-        condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
-        inputs:
-          connectionType: 'Azure Resource Manager'
-          azureSubscriptionEndpoint: '$(subscriptionConnection)'
-          azureResourceGroup: '$(terraformApply.resource_group)'
-          kubernetesCluster: '$(terraformApply.aks_name)'
-          useClusterAdmin: true
-          command: 'apply'
-          useConfigurationFile: true
-          configuration: '$(manifestDirectory)/aspnetapp.yaml'
-          secretType: 'generic'
+    # - ${{ if parameters.deploy }}:
+    #   - task: Kubernetes@1
+    #     displayName: 'kubectl apply: ASP.NET App'
+    #     condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
+    #     inputs:
+    #       connectionType: 'Azure Resource Manager'
+    #       azureSubscriptionEndpoint: '$(subscriptionConnection)'
+    #       azureResourceGroup: '$(terraformApply.resource_group)'
+    #       kubernetesCluster: '$(terraformApply.aks_name)'
+    #       useClusterAdmin: true
+    #       command: 'apply'
+    #       useConfigurationFile: true
+    #       configuration: '$(manifestDirectory)/aspnetapp.yaml'
+    #       secretType: 'generic'
         
-    - ${{ if parameters.deploy }}:
-      - task: Kubernetes@1
-        displayName: 'kubectl apply: Voting App'
-        condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
-        inputs:
-          connectionType: 'Azure Resource Manager'
-          azureSubscriptionEndpoint: '$(subscriptionConnection)'
-          azureResourceGroup: '$(terraformApply.resource_group)'
-          kubernetesCluster: '$(terraformApply.aks_name)'
-          useClusterAdmin: true
-          command: 'apply'
-          useConfigurationFile: true
-          configuration: '$(manifestDirectory)/internal-vote.yaml'
-          secretType: 'generic'
+    # - ${{ if parameters.deploy }}:
+    #   - task: Kubernetes@1
+    #     displayName: 'kubectl apply: Voting App'
+    #     condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
+    #     inputs:
+    #       connectionType: 'Azure Resource Manager'
+    #       azureSubscriptionEndpoint: '$(subscriptionConnection)'
+    #       azureResourceGroup: '$(terraformApply.resource_group)'
+    #       kubernetesCluster: '$(terraformApply.aks_name)'
+    #       useClusterAdmin: true
+    #       command: 'apply'
+    #       useConfigurationFile: true
+    #       configuration: '$(manifestDirectory)/internal-vote.yaml'
+    #       secretType: 'generic'
 
     - ${{ if parameters.deploy }}:
       - task: AzureCLI@2
         condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
-        displayName: 'Test applications'
+        displayName: 'Deploy & Test applications'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
