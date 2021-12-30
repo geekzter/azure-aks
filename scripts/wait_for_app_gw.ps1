@@ -3,7 +3,7 @@ param (
     [parameter(Mandatory=$true)][string]$AksName,
     [parameter(Mandatory=$false)][string]$ApplicationGatewayName="applicationgateway",
     [parameter(Mandatory=$true)][string]$ResourceGroupName
-    )
+)
 . (Join-Path $PSScriptRoot functions.ps1)
 
 function Wait-ApplicationGateway(
