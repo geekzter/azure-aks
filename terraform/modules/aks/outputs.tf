@@ -19,7 +19,7 @@ output kube_config {
 }
 
 output kubernetes_api_server_ip_address {
-  value = data.azurerm_private_endpoint_connection.api_server_endpoint.private_service_connection.0.private_ip_address
+  value = var.private_cluster_enabled ? data.azurerm_private_endpoint_connection.api_server_endpoint[0].private_service_connection.0.private_ip_address : null
 }
 output kubernetes_client_certificate {
   value = azurerm_kubernetes_cluster.aks.kube_admin_config.0.client_certificate

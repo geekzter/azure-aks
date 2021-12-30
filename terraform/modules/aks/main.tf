@@ -110,7 +110,7 @@ resource azurerm_kubernetes_cluster aks {
     outbound_type              = "userDefinedRouting"
   }
 
-  private_cluster_enabled      = true
+  private_cluster_enabled      = var.private_cluster_enabled
 
   role_based_access_control {
     azure_active_directory {
@@ -139,6 +139,8 @@ resource azurerm_kubernetes_cluster aks {
 data azurerm_private_endpoint_connection api_server_endpoint {
   name                         = "kube-apiserver"
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
+
+  count                        = var.private_cluster_enabled ? 1 : 0
 }
 
 data azurerm_application_gateway app_gw {

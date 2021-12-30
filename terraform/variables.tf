@@ -52,6 +52,11 @@ variable peer_network_id {
   default     = ""
 }
 
+variable private_cluster_enabled {
+  type        = bool
+  default     = true
+}
+
 variable resource_prefix {
   description = "The prefix to put in front of resource names created"
   default     = "k8s"
