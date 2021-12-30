@@ -1,6 +1,7 @@
-#deploy_aks                     = true
-#deploy_bastion                 = true
-#configure_kubernetes           = false
+# deploy_aks                     = true
+# deploy_bastion                 = true
+# configure_kubernetes           = false
 
-#peer_network_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet"
-#peer_network_has_gateway       = true
+# Network configuration automatically set in geekzter/azure-devenv
+# peer_network_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet"
+# peer_network_has_gateway       = true
