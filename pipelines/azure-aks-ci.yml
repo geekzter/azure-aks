@@ -195,10 +195,10 @@ jobs:
     #     displayName: 'Prepare Terraform config (latest version)'
     #     workingDirectory: '$(terraformDirectory)'
 
-    # - task: TerraformInstaller@0
-    #   displayName: 'Install terraform'
-    #   inputs:
-    #     terraformVersion: '$(terraformConfig.version)'
+    - task: TerraformInstaller@0
+      displayName: 'Install terraform'
+      inputs:
+        terraformVersion: '$(terraformConfig.version)'
 
     # - ${{ if or(eq(parameters.unpinTerraformProviders, 'Yes'),eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual'))) }}:
     #   # Unpin version e.g. "= 2.56" -> "~> 2.56"
@@ -213,18 +213,18 @@ jobs:
     #     condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'true'))
     #     workingDirectory: '$(terraformDirectory)'
 
-    # - task: TerraformCLI@0
-    #   displayName: 'Terraform init'
-    #   inputs:
-    #     command: 'init'
-    #     workingDirectory: '$(terraformDirectory)'
-    #     backendType: 'azurerm'
-    #     backendServiceArm: '$(subscriptionConnection)'
-    #     backendAzureRmResourceGroupName: '$(TF_STATE_RESOURCE_GROUP_NAME)'
-    #     backendAzureRmStorageAccountName: '$(TF_STATE_STORAGE_ACCOUNT_NAME)'
-    #     backendAzureRmContainerName: '$(TF_STATE_CONTAINER_NAME)'
-    #     backendAzureRmKey: 'terraform.tfstate'
-    #     allowTelemetryCollection: true
+    - task: TerraformCLI@0
+      displayName: 'Terraform init'
+      inputs:
+        command: 'init'
+        workingDirectory: '$(terraformDirectory)'
+        backendType: 'azurerm'
+        backendServiceArm: '$(subscriptionConnection)'
+        backendAzureRmResourceGroupName: '$(TF_STATE_RESOURCE_GROUP_NAME)'
+        backendAzureRmStorageAccountName: '$(TF_STATE_STORAGE_ACCOUNT_NAME)'
+        backendAzureRmContainerName: '$(TF_STATE_CONTAINER_NAME)'
+        backendAzureRmKey: 'terraform.tfstate'
+        allowTelemetryCollection: true
 
     # - ${{ if ne(parameters.destroy, 'Never') }}:
     #   - publish: $(terraformDirectory)
