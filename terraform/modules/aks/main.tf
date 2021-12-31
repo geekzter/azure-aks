@@ -68,6 +68,7 @@ resource azurerm_kubernetes_cluster aks {
     }
     ingress_application_gateway {
       enabled                  = true
+      gateway_name             = "applicationgateway"
       subnet_id                = var.application_gateway_subnet_id
     }
     kube_dashboard {
