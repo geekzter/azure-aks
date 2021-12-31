@@ -150,68 +150,68 @@ jobs:
     clean: all
 
   steps:
-    # - ${{ if parameters.clear }}:
-    #   - task: AzureCLI@2
-    #     name: clear
-    #     displayName: 'Remove conflicting resources from previous runs'
-    #     inputs:
-    #       azureSubscription: '$(subscriptionConnection)'
-    #       scriptType: pscore
-    #       scriptLocation: inlineScript
-    #       inlineScript: |
-    #         # Remove VNet peerings
-    #         if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
-    #           $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
-    #           if ($peeringIDs) {
-    #             Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
-    #             &{ # az writes information to stderr
-    #               $ErrorActionPreference = 'SilentlyContinue'
-    #               az resource delete --ids $peeringIDs 2>&1
-    #             }
-    #           } else {
-    #             Write-Host "No virtual network peerings to remove"
-    #           }
-    #         }
-    #       useGlobalConfig: true
-    #       failOnStandardError: true
-    #       workingDirectory: '$(terraformDirectory)'
+    - ${{ if parameters.clear }}:
+      - task: AzureCLI@2
+        name: clear
+        displayName: 'Remove conflicting resources from previous runs'
+        inputs:
+          azureSubscription: '$(subscriptionConnection)'
+          scriptType: pscore
+          scriptLocation: inlineScript
+          inlineScript: |
+            # Remove VNet peerings
+            if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
+              $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
+              if ($peeringIDs) {
+                Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
+                &{ # az writes information to stderr
+                  $ErrorActionPreference = 'SilentlyContinue'
+                  az resource delete --ids $peeringIDs 2>&1
+                }
+              } else {
+                Write-Host "No virtual network peerings to remove"
+              }
+            }
+          useGlobalConfig: true
+          failOnStandardError: true
+          workingDirectory: '$(terraformDirectory)'
 
-    # - ${{ if not(parameters.unpinTerraform) }}:
-    #   - pwsh: |
-    #       $terraformVersion = (Get-Content .terraform-version)
-    #       Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"
-    #       Copy-Item backend.tf.sample backend.tf
-    #     name: terraformConfig
-    #     displayName: 'Prepare Terraform config'
-    #     workingDirectory: '$(terraformDirectory)'
+    - ${{ if not(parameters.unpinTerraform) }}:
+      - pwsh: |
+          $terraformVersion = (Get-Content .terraform-version)
+          Write-Host "##vso[task.setvariable variable=version;isOutput=true]${terraformVersion}"
+          Copy-Item backend.tf.sample backend.tf
+        name: terraformConfig
+        displayName: 'Prepare Terraform config'
+        workingDirectory: '$(terraformDirectory)'
 
-    # - ${{ if parameters.unpinTerraform }}:
-    #   - pwsh: |
-    #       (Get-Content ./provider.tf) -replace "required_version *= `" *(~>|=) +",'required_version = ">= ' | Out-File provider.tf
-    #       Get-Content ./provider.tf
-    #       Write-Host "##vso[task.setvariable variable=version;isOutput=true]latest"
-    #       Copy-Item backend.tf.sample backend.tf
-    #     name: terraformConfig
-    #     displayName: 'Prepare Terraform config (latest version)'
-    #     workingDirectory: '$(terraformDirectory)'
+    - ${{ if parameters.unpinTerraform }}:
+      - pwsh: |
+          (Get-Content ./provider.tf) -replace "required_version *= `" *(~>|=) +",'required_version = ">= ' | Out-File provider.tf
+          Get-Content ./provider.tf
+          Write-Host "##vso[task.setvariable variable=version;isOutput=true]latest"
+          Copy-Item backend.tf.sample backend.tf
+        name: terraformConfig
+        displayName: 'Prepare Terraform config (latest version)'
+        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformInstaller@0
       displayName: 'Install terraform'
       inputs:
         terraformVersion: '$(terraformConfig.version)'
 
-    # - ${{ if or(eq(parameters.unpinTerraformProviders, 'Yes'),eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual'))) }}:
-    #   # Unpin version e.g. "= 2.56" -> "~> 2.56"
-    #   - pwsh: |
-    #       (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
-    #       Get-Content ./provider.tf
-    #       if (Test-Path .terraform.lock.hcl) {
-    #         Remove-Item .terraform.lock.hcl -Force
-    #       }
-    #     displayName: 'Unpin Terraform provider versions'
-    #     # condition required as '- ${{ if ' template expression is not evaluated when using a strategy
-    #     condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'true'))
-    #     workingDirectory: '$(terraformDirectory)'
+    - ${{ if or(eq(parameters.unpinTerraformProviders, 'Yes'),eq(parameters.unpinTerraformProviders, 'Strategy'),not(eq(variables['Build.Reason'], 'Manual'))) }}:
+      # Unpin version e.g. "= 2.56" -> "~> 2.56"
+      - pwsh: |
+          (Get-Content ./provider.tf) -replace " = `" *= +",' = "~> ' | Out-File provider.tf
+          Get-Content ./provider.tf
+          if (Test-Path .terraform.lock.hcl) {
+            Remove-Item .terraform.lock.hcl -Force
+          }
+        displayName: 'Unpin Terraform provider versions'
+        # condition required as '- ${{ if ' template expression is not evaluated when using a strategy
+        condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'true'))
+        workingDirectory: '$(terraformDirectory)'
 
     - task: TerraformCLI@0
       displayName: 'Terraform init'
