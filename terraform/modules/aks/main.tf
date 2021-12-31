@@ -111,6 +111,8 @@ resource azurerm_kubernetes_cluster aks {
   }
 
   private_cluster_enabled      = var.private_cluster_enabled
+  private_dns_zone_id          = "System"
+  #private_cluster_public_fqdn_enabled = true
 
   role_based_access_control {
     azure_active_directory {
