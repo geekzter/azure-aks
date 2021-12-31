@@ -289,7 +289,7 @@ jobs:
         scriptType: pscore
         scriptLocation: inlineScript
         inlineScript: |
-          if (!($env:TF_VAR_kubernetes_version -or env:TF_VAR_KUBERNETES_VERSION)) {
+          if (!($env:TF_VAR_kubernetes_version -or $env:TF_VAR_KUBERNETES_VERSION)) {
             # Use Azure CLI default (Terraform may use a different one)
             az aks get-versions -l $(TF_VAR_location) --query "orchestrators[?default].orchestratorVersion" -o tsv | Set-Item env:TF_VAR_kubernetes_version
           }
