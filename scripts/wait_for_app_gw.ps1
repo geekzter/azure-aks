@@ -3,7 +3,7 @@ param (
     [parameter(Mandatory=$true)][string]$AksName,
     [parameter(Mandatory=$false)][string]$ApplicationGatewayName="applicationgateway",
     [parameter(Mandatory=$true)][string]$ResourceGroupName
-    )
+)
 . (Join-Path $PSScriptRoot functions.ps1)
 
 function Wait-ApplicationGateway(
@@ -11,16 +11,17 @@ function Wait-ApplicationGateway(
     [parameter(Mandatory=$true)][string]$ApplicationGatewayName,
     [parameter(Mandatory=$true)][string]$ResourceGroupName
 ) {
+    $intervalSeconds = 10
+    $timeoutSeconds = 300
+
+    Write-Host "Waiting for AKS $AksName to finish provisioning..."
+    az aks wait -g $ResourceGroupName -n $AksName --created --interval $intervalSeconds --timeout $timeoutSeconds
+    az aks wait -g $ResourceGroupName -n $AksName --updated --interval $intervalSeconds --timeout $timeoutSeconds
+
     $nodeResourceGroupName = $(az aks show -n $AksName -g $ResourceGroupName --query nodeResourceGroup -o tsv)
 
     Write-Host "Waiting for Application Gateway ${ApplicationGatewayName} to finish updating..."
-    $appGWState = (az network application-gateway show -n $ApplicationGatewayName -g $nodeResourceGroupName --query "provisioningState" -o tsv 2>$null)
-    while ((-not $appGWState) -or ($appGWState -ieq "updating")) {
-        Write-Host "Application Gateway ${ApplicationGatewayName} provisioning status is '${appGWState}'..."
-        Start-Sleep -Seconds 10
-        $appGWState = (az network application-gateway show -n $ApplicationGatewayName -g $nodeResourceGroupName --query "provisioningState" -o tsv 2>$null)
-    } 
-    Write-Host "Application Gateway ${ApplicationGatewayName} provisioning status is '${appGWState}'"
+    az network application-gateway wait -g $nodeResourceGroupName -n $ApplicationGatewayName --created --updated --interval $intervalSeconds --timeout $timeoutSeconds
 }
 
 Wait-ApplicationGateway -AksName $AksName -ResourceGroupName $ResourceGroupName -ApplicationGatewayName $ApplicationGatewayName

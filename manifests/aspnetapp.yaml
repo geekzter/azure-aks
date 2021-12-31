@@ -38,10 +38,10 @@ spec:
   rules:
   - http:
       paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: aspnetapp
-              port:
-                number: 80
+      - path: /
+        backend:
+          service:
+            name: aspnetapp
+            port:
+              number: 80
+        pathType: Exact

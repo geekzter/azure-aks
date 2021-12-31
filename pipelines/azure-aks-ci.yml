@@ -45,6 +45,10 @@ parameters:
   - No
   - Yes
   - Strategy
+- name: useDefaultK8sVersion
+  displayName: Use default Kubernetes version
+  type: boolean
+  default: true
 
 name: $(Date:yyyyMMdd)$(Rev:.r)-$(Build.DefinitionVersion)-$(SourceBranchName)-${{ parameters.workspace }}-$(Build.BuildId)
 
@@ -75,6 +79,8 @@ variables:
   value: 180
 - name: 'repository'
   value: 'azure-aks'
+- name: AZURE_CORE_ONLY_SHOW_ERRORS
+  value: 'true'
 - name: AZURE_EXTENSION_USE_DYNAMIC_INSTALL
   value: 'yes_without_prompt'
 - name: 'TF_IN_AUTOMATION'
@@ -280,42 +286,54 @@ jobs:
           failOnStandardError: true
           workingDirectory: '$(scriptDirectory)'
 
-    - pwsh: |
-        # Use pipeline agent VNet as network to peer from
-        $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
-
-        if ($env:TF_VAR_ADDRESS_SPACE) {
-          Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null # Override below
-        }
-        if ($${{ not(parameters.clear) }} -and (!((terraform output resource_suffix 2>&1) -match "Warning"))) {
-          # Keep random values of previous runs
-          $env:TF_VAR_address_space   = "$(terraform output -raw address_space 2>$null)"
-          $env:TF_VAR_RESOURCE_SUFFIX = $null
-          $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
-        }
-        # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
-        $env:TF_VAR_address_space   ??= "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
-
-        # List environment variables
-        Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
-
-        # Convert uppercased Terraform environment variables to .auto.tfvars file
-        foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
-          $terraformVariableName = $tfvar.Name.Substring(7).ToLowerInvariant()
-          $terraformVariableValue = $tfVar.Value
-
-          if ($terraformVariableValue -imatch "^\W*(true|false|\[[^\]]*\]|\{[^\}]*\})\W*$") {
-            # Boolean or List, write as-is
-            Write-Output "${terraformVariableName} = ${terraformVariableValue}" | Out-File ci.auto.tfvars -Append -Force
-          } else {
-            Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
-          }
-        } 
-        Write-Host "Contents of ci.auto.tfvars:"
-        Get-Content ci.auto.tfvars
-      name: terraformVariables
+    - task: AzureCLI@2
       displayName: 'Prepare Terraform variables'
-      workingDirectory: '$(terraformDirectory)'
+      inputs:
+        azureSubscription: '$(subscriptionConnection)'
+        scriptType: pscore
+        scriptLocation: inlineScript
+        inlineScript: |
+          if ($${{ parameters.useDefaultK8sVersion }} -and !($env:TF_VAR_kubernetes_version -or $env:TF_VAR_KUBERNETES_VERSION)) {
+            # Use Azure CLI default (Terraform may use a different one)
+            az aks get-versions -l $(TF_VAR_location) --query "orchestrators[?default].orchestratorVersion" -o tsv | Set-Item env:TF_VAR_kubernetes_version
+          }
+
+          # Use pipeline agent VNet as network to peer from
+          $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
+
+          if ($env:TF_VAR_ADDRESS_SPACE) {
+            Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null # Override below
+          }
+          if ($${{ not(parameters.clear) }} -and (!((terraform output resource_suffix 2>&1) -match "Warning"))) {
+            # Keep random values of previous runs
+            $env:TF_VAR_address_space   = "$(terraform output -raw address_space 2>$null)"
+            $env:TF_VAR_RESOURCE_SUFFIX = $null
+            $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
+          }
+          # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
+          $env:TF_VAR_address_space   ??= "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
+
+          # List environment variables
+          Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
+
+          # Convert uppercased Terraform environment variables to .auto.tfvars file
+          foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
+            $terraformVariableName = $tfvar.Name.Substring(7).ToLowerInvariant()
+            $terraformVariableValue = $tfVar.Value
+
+            if ($terraformVariableValue -imatch "^\W*(true|false|\[[^\]]*\]|\{[^\}]*\})\W*$") {
+              # Boolean or List, write as-is
+              Write-Output "${terraformVariableName} = ${terraformVariableValue}" | Out-File ci.auto.tfvars -Append -Force
+            } else {
+              Write-Output "${terraformVariableName} = `"${terraformVariableValue}`"" | Out-File ci.auto.tfvars -Append -Force
+            }
+          } 
+          Write-Host "Contents of ci.auto.tfvars:"
+          Get-Content ci.auto.tfvars
+
+        useGlobalConfig: true
+        failOnStandardError: true
+        workingDirectory: '$(terraformDirectory)'
 
     - task: AzureCLI@2
       displayName: 'Terraform plan & apply'
@@ -366,39 +384,9 @@ jobs:
           workingDirectory: '$(scriptDirectory)'
 
     - ${{ if parameters.deploy }}:
-      - task: Kubernetes@1
-        displayName: 'kubectl apply: ASP.NET App'
-        condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
-        inputs:
-          connectionType: 'Azure Resource Manager'
-          azureSubscriptionEndpoint: '$(subscriptionConnection)'
-          azureResourceGroup: '$(terraformApply.resource_group)'
-          kubernetesCluster: '$(terraformApply.aks_name)'
-          useClusterAdmin: true
-          command: 'apply'
-          useConfigurationFile: true
-          configuration: '$(manifestDirectory)/aspnetapp.yaml'
-          secretType: 'generic'
-        
-    - ${{ if parameters.deploy }}:
-      - task: Kubernetes@1
-        displayName: 'kubectl apply: Voting App'
-        condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
-        inputs:
-          connectionType: 'Azure Resource Manager'
-          azureSubscriptionEndpoint: '$(subscriptionConnection)'
-          azureResourceGroup: '$(terraformApply.resource_group)'
-          kubernetesCluster: '$(terraformApply.aks_name)'
-          useClusterAdmin: true
-          command: 'apply'
-          useConfigurationFile: true
-          configuration: '$(manifestDirectory)/internal-vote.yaml'
-          secretType: 'generic'
-
-    - ${{ if parameters.deploy }}:
       - task: AzureCLI@2
         condition: and(succeeded(), not(eq(coalesce(variables['terraformApply.aks_name'],'null'),'null')), eq(variables['terraformApply.peered_network'],'true'))
-        displayName: 'Test applications'
+        displayName: 'Deploy & Test applications'
         inputs:
           azureSubscription: '$(subscriptionConnection)'
           scriptType: pscore
@@ -412,6 +400,7 @@ jobs:
             $env:ARM_TENANT_ID       ??= $(az account show --query tenantId -o tsv)
             $env:ARM_SUBSCRIPTION_ID ??= $(az account show --query id -o tsv)              
 
+            ./kube_config.ps1
             ./deploy_app.ps1
           addSpnToEnvironment: true
           useGlobalConfig: true

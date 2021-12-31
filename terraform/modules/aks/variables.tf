@@ -10,6 +10,9 @@ variable log_analytics_workspace_id {}
 variable name {}
 variable node_size {}
 variable node_subnet_id {}
+variable private_cluster_enabled {
+  type        = bool
+}
 variable resource_group_id {}
 variable ssh_public_key_file {}
 variable tags {

@@ -165,7 +165,7 @@ function Invoke (
     }
 }
 
-function Prepare-KubeConfig(
+function Prepare-KubeConfig (
     [parameter(Mandatory=$true)][string]$Workspace    
 ) {
     $kubeConfig = (Get-TerraformOutput kube_config)
@@ -173,10 +173,10 @@ function Prepare-KubeConfig(
     if ($kubeConfig) {
         # Make sure the local file exists, terraform apply may have run on another host
         $kubeConfigMoniker = ($Workspace -eq "default") ? "" : $Workspace 
-        $kubeConfigDirectory = (Join-Path $PSScriptRoot ".." .kube)
-        $null = New-Item -ItemType Directory -Force -Path $kubeConfigDirectory 
+        $kubeConfigDirectory = (Join-Path (Split-Path $PSScriptRoot -Parent) .kube)
+        New-Item -ItemType Directory -Force -Path $kubeConfigDirectory | Out-Null
         $kubeConfigFile = (Join-Path $kubeConfigDirectory "${kubeConfigMoniker}config")
-        Set-Content -Path $kubeConfigFile -Value $kubeConfig 
+        $kubeConfig | Set-Content -Path $kubeConfigFile
         $env:KUBECONFIG = $kubeConfigFile
         Write-Host "Prepared ${kubeConfigFile}"
         return $kubeConfigFile

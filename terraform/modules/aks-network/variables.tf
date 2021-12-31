@@ -7,6 +7,9 @@ variable nodes_ip_group_id {}
 variable nodes_subnet_id {}
 variable paas_subnet_id {}
 variable peer_network_id {}
+variable private_cluster_enabled {
+  type        = bool
+}
 variable resource_group_id {}
 variable resource_group_name {}
 variable tags {

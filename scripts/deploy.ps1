@@ -122,6 +122,10 @@ try {
     }
 
     if ($Plan -or $Apply) {
+        # Get VNet info from environment (geekzter/azure-devenv)
+        $env:TF_VAR_peer_network_has_gateway ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_HAS_GATEWAY
+        $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
+
         # Create plan
         Invoke "terraform plan $varArgs -out='$planFile'"
     }

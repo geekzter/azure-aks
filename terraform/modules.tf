@@ -38,6 +38,7 @@ module aks {
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
   node_size                    = var.node_size
   node_subnet_id               = module.network.nodes_subnet_id
+  private_cluster_enabled      = var.private_cluster_enabled
   resource_group_id            = azurerm_resource_group.rg.id
   ssh_public_key_file          = var.ssh_public_key_file
   tags                         = azurerm_resource_group.rg.tags
@@ -60,6 +61,7 @@ module aks_network {
   nodes_subnet_id              = module.network.nodes_subnet_id
   paas_subnet_id               = module.network.paas_subnet_id
   peer_network_id              = var.peer_network_id
+  private_cluster_enabled      = var.private_cluster_enabled
   resource_group_id            = azurerm_resource_group.rg.id
   tags                         = azurerm_resource_group.rg.tags
   virtual_network_id           = module.network.virtual_network_id
