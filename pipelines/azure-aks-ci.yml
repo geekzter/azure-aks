@@ -160,8 +160,8 @@ jobs:
           scriptLocation: inlineScript
           inlineScript: |
             # Remove VNet peerings
-            if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
-              $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
+            if ($env:PIPELINE_DEMO_AGENT_VIRTUAL_NETWORK_ID) {
+              $peeringIDs = $(az network vnet show --ids $env:PIPELINE_DEMO_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
               if ($peeringIDs) {
                 Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
                 &{ # az writes information to stderr
@@ -293,7 +293,7 @@ jobs:
           }
 
           # Use pipeline agent VNet as network to peer from
-          $env:TF_VAR_peer_network_id ??= $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID
+          $env:TF_VAR_peer_network_id ??= $env:PIPELINE_DEMO_AGENT_VIRTUAL_NETWORK_ID
 
           if ($env:TF_VAR_ADDRESS_SPACE) {
             Remove-Item env:TF_VAR_ADDRESS_SPACE 2>$null # Override below
@@ -308,7 +308,7 @@ jobs:
           $env:TF_VAR_address_space   ??= "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
 
           # List environment variables
-          Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,GEEKZTER_*,TF_* | Sort-Object -Property Name
+          Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,PIPELINE_*,TF_* | Sort-Object -Property Name
 
           # Convert uppercased Terraform environment variables to .auto.tfvars file
           foreach ($tfvar in $(Get-ChildItem -Path Env: -Recurse -Include TF_VAR_*)) {
@@ -502,8 +502,8 @@ jobs:
           }
 
           # Remove VNet peerings
-          if ($env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID) {
-            $peeringIDs = $(az network vnet show --ids $env:GEEKZTER_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
+          if ($env:PIPELINE_DEMO_AGENT_VIRTUAL_NETWORK_ID) {
+            $peeringIDs = $(az network vnet show --ids $env:PIPELINE_DEMO_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
             if ($peeringIDs) {
               Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
               &{ # az writes information to stderr
