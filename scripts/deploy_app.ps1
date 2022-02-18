@@ -23,7 +23,9 @@ try {
     if ($Deploy) {
         Write-Host "`nDeploying Voting App..."
         kubectl apply -f (Join-Path $manifestsDirectory internal-vote.yaml) 2>&1
-        kubectl get service azure-vote-front 2>&1
+        if ($DebugPreference -ine "SilentlyContinue") {
+            kubectl get service azure-vote-front 2>&1
+        }
     }
     $ilbIPAddress = Get-LoadBalancerIPAddress -KubernetesService azure-vote-front
 
@@ -32,8 +34,10 @@ try {
     if ($agicFQDN -and $Deploy) {
         Write-Host "`nDeploying ASP.NET App..."
         kubectl apply -f (Join-Path $manifestsDirectory aspnetapp.yaml) 2>&1
-        kubectl describe ingress aspnetapp 2>&1
-        kubectl get ingress 2>&1
+        if ($DebugPreference -ine "SilentlyContinue") {
+            kubectl describe ingress aspnetapp 2>&1
+            kubectl get ingress 2>&1
+        }
     }
 
     # Test after deployment, this should be faster
