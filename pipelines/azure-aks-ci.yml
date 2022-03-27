@@ -129,6 +129,7 @@ jobs:
     strategy:
       matrix:
         pinTerraformProviders:
+          randomSeed: $(Build.BuildId)0
           resourceGroup: '$(TF_VAR_resource_prefix)-${{ parameters.workspace }}a-$(Build.BuildId)'
           substituteAlternateVariables: false
           terraformArtifactName: 'terraformPrimary'
@@ -136,6 +137,7 @@ jobs:
           TF_WORKSPACE: '${{ parameters.workspace }}a'
           unpinTerraformProviders: ${{ lower(eq(parameters.unpinTerraformProviders, 'Yes')) }}
         unpinTerraformProviders:
+          randomSeed: $(Build.BuildId)5
           resourceGroup: '$(TF_VAR_resource_prefix)-${{ parameters.workspace }}b-$(Build.BuildId)'
           substituteAlternateVariables: true
           terraformArtifactName: 'terraformAlternate'
@@ -152,6 +154,7 @@ jobs:
         TF_VAR_resource_suffix: '$(Build.BuildId)'
       TF_WORKSPACE: '${{ parameters.workspace }}'
       unpinTerraformProviders: ${{ eq(parameters.unpinTerraformProviders, 'Yes') }}
+      randomSeed: $(Build.BuildId)
       resourceGroup: '$(TF_VAR_resource_prefix)-$(TF_WORKSPACE)-$(TF_VAR_resource_suffix)'
 
   workspace:
@@ -310,7 +313,7 @@ jobs:
             $env:TF_VAR_resource_suffix = "$(terraform output -raw resource_suffix 2>$null)"
           }
           # Set random CIDR (to reduce the risk of clashing VNet peerings with agent VNet)
-          $env:TF_VAR_address_space   ??= "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(Build.BuildId))))) | Select-Object -ExpandProperty IPAddressToString)/16"
+          $env:TF_VAR_address_space   ??= "$([IPAddress]::Parse([String] (167772160 + (65536*(Get-Random -Minimum 0 -Maximum 255 -SetSeed $(randomSeed))))) | Select-Object -ExpandProperty IPAddressToString)/16"
 
           # List environment variables
           Get-ChildItem -Path Env: -Recurse -Include ARM_*,AZURE_*,PIPELINE_*,TF_* | Sort-Object -Property Name
