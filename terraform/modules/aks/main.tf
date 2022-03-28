@@ -83,6 +83,12 @@ resource azurerm_kubernetes_cluster aks {
 
   automatic_channel_upgrade    = "stable"
 
+  azure_active_directory_role_based_access_control {
+    admin_group_object_ids     = [var.client_object_id]
+    azure_rbac_enabled         = true
+    managed                    = true
+  }
+
   default_node_pool {
     availability_zones         = [1,2,3]
     enable_auto_scaling        = true
@@ -115,14 +121,7 @@ resource azurerm_kubernetes_cluster aks {
   private_dns_zone_id          = "System"
   #private_cluster_public_fqdn_enabled = true
 
-  role_based_access_control {
-    azure_active_directory {
-      admin_group_object_ids   = [var.client_object_id]
-      azure_rbac_enabled       = true
-      managed                  = true
-    }
-    enabled                    = true
-  }
+  role_based_access_control_enabled = true
 
   lifecycle {
     ignore_changes             = [

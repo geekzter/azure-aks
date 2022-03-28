@@ -57,7 +57,7 @@ resource azurerm_resource_group rg {
 }
 
 resource azurerm_container_registry acr {
-  name                         = "${lower(var.resource_prefix)}reg${local.suffix}"
+  name                         = "${lower(var.resource_prefix)}${terraform.workspace}reg${local.suffix}"
   resource_group_name          = azurerm_resource_group.rg.name
   location                     = var.location
   sku                          = "Premium"

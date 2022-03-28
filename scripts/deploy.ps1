@@ -11,7 +11,7 @@
 .EXAMPLE
     ./deploy.ps1 -apply
 #> 
-#Requires -Version 7
+#Requires -Version 7.2
 
 ### Arguments
 param ( 
@@ -137,12 +137,18 @@ try {
         if (!$inAutomation) {
             if (!$Force) {
                 # Prompt to continue
-                Write-Host "`nIf you wish to proceed executing Terraform plan $planFile in workspace $workspace, please reply 'yes' - null or N aborts" -ForegroundColor Cyan
-                $proceedanswer = Read-Host 
+                $defaultChoice = 0
+                $choices = @(
+                    [System.Management.Automation.Host.ChoiceDescription]::new("&Continue", "Deploy infrastructure")
+                    [System.Management.Automation.Host.ChoiceDescription]::new("&Exit", "Abort infrastructure deployment")
+                )
+                $decision = $Host.UI.PromptForChoice("Continue", "Do you wish to proceed executing Terraform plan $planFile in workspace $workspace?", $choices, $defaultChoice)
 
-                if ($proceedanswer -ne "yes") {
-                    Write-Host "`nReply is not 'yes' - Aborting " -ForegroundColor Yellow
-                    exit
+                if ($decision -eq 0) {
+                    Write-Host "$($choices[$decision].HelpMessage)"
+                } else {
+                    Write-Host "$($PSStyle.Formatting.Warning)$($choices[$decision].HelpMessage)$($PSStyle.Reset)"
+                    exit                    
                 }
             }
         }
