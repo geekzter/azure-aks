@@ -29,7 +29,7 @@ locals {
   workspace_moniker            = terraform.workspace == "default" ? "" : terraform.workspace
 }
 
-# Usage: https://www.terraform.io/docs/providers/azurerm/d/client_config.html
+data azuread_client_config current {}
 data azurerm_client_config current {}
 data azurerm_subscription primary {}
 
@@ -47,7 +47,7 @@ resource azurerm_resource_group rg {
     environment                = local.environment
     provisioner                = "terraform"
     provisioner-client-id      = data.azurerm_client_config.current.client_id
-    provisioner-object-id      = data.azurerm_client_config.current.object_id
+    provisioner-object-id      = data.azuread_client_config.current.object_id
     repository                 = "azure-aks"
     runid                      = var.run_id
     shutdown                   = "true"
