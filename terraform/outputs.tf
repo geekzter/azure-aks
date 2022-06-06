@@ -48,6 +48,7 @@ output kubernetes_client_certificate {
 }
 
 output kubernetes_host {
+  sensitive   = true
   value       = var.deploy_aks ? module.aks.0.kubernetes_host : null
 }
 

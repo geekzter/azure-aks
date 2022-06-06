@@ -79,11 +79,10 @@ resource azurerm_firewall gateway {
   name                         = "${var.resource_group_name}-iag"
   location                     = var.location
   resource_group_name          = var.resource_group_name
-
+  sku_name                     = "AZFW_VNet"
+  sku_tier                     = "Standard"
+  
   dns_servers                  = var.dns_servers
-
-  # Make zone redundant
-  zones                        = [1,2]
 
   ip_configuration {
     name                       = "firewall_ipconfig"
