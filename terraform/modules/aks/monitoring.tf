@@ -89,8 +89,8 @@ resource azurerm_monitor_diagnostic_setting aks {
 } 
 
 resource azurerm_monitor_diagnostic_setting application_gateway_logs {
-  name                         = "${split("/",azurerm_kubernetes_cluster.aks.addon_profile[0].ingress_application_gateway[0].effective_gateway_id)[8]}-logs"
-  target_resource_id           = azurerm_kubernetes_cluster.aks.addon_profile[0].ingress_application_gateway[0].effective_gateway_id
+  name                         = "${split("/",azurerm_kubernetes_cluster.aks.ingress_application_gateway[0].effective_gateway_id)[8]}-logs"
+  target_resource_id           = azurerm_kubernetes_cluster.aks.ingress_application_gateway[0].effective_gateway_id
   log_analytics_workspace_id   = var.log_analytics_workspace_id
 
   log {

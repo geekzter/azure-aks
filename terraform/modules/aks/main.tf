@@ -59,28 +59,6 @@ resource azurerm_kubernetes_cluster aks {
   # Triggers resource to be recreated
   kubernetes_version           = local.kubernetes_version
 
-  addon_profile {
-    azure_policy {
-      enabled                  = true
-    }
-    http_application_routing {
-      enabled                  = false # Use AGIC instead
-    }
-    ingress_application_gateway {
-      enabled                  = true
-      gateway_name             = "applicationgateway"
-      subnet_id                = var.application_gateway_subnet_id
-    }
-    kube_dashboard {
-      # Deprecated for Kubernetes version >= 1.19.0.
-      enabled                  = false
-    }
-    oms_agent {
-      enabled                  = true
-      log_analytics_workspace_id = var.log_analytics_workspace_id
-    }
-  }
-
   automatic_channel_upgrade    = "stable"
 
   azure_active_directory_role_based_access_control {
@@ -89,8 +67,9 @@ resource azurerm_kubernetes_cluster aks {
     managed                    = true
   }
 
+  azure_policy_enabled         = true
+
   default_node_pool {
-    availability_zones         = [1,2,3]
     enable_auto_scaling        = true
     enable_host_encryption     = false # Requires 'Microsoft.Compute/EncryptionAtHost' feature
     enable_node_public_ip      = false
@@ -104,9 +83,16 @@ resource azurerm_kubernetes_cluster aks {
     vnet_subnet_id             = var.node_subnet_id
   }
 
+  http_application_routing_enabled = true
+
   identity {
     type                       = "UserAssigned"
-    user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
+    identity_ids               = [azurerm_user_assigned_identity.aks_identity.id]
+  }
+
+  ingress_application_gateway {
+    gateway_name               = "applicationgateway"
+    subnet_id                  = var.application_gateway_subnet_id
   }
 
   # local_account_disabled       = true # Will become default in 1.24
@@ -115,6 +101,10 @@ resource azurerm_kubernetes_cluster aks {
     network_plugin             = "azure"
     network_policy             = "azure"
     outbound_type              = "userDefinedRouting"
+  }
+
+  oms_agent {
+    log_analytics_workspace_id = var.log_analytics_workspace_id
   }
 
   private_cluster_enabled      = var.private_cluster_enabled
@@ -146,15 +136,15 @@ data azurerm_private_endpoint_connection api_server_endpoint {
 }
 
 data azurerm_application_gateway app_gw {
-  name                         = split("/",azurerm_kubernetes_cluster.aks.addon_profile[0].ingress_application_gateway[0].effective_gateway_id)[8]
+  name                         = split("/",azurerm_kubernetes_cluster.aks.ingress_application_gateway[0].effective_gateway_id)[8]
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
 }
 resource random_string application_gateway_domain_label {
-  length                      = min(16,63-length(var.dns_host_suffix))
-  upper                       = false
-  lower                       = true
-  number                      = false
-  special                     = false
+  length                       = min(16,63-length(var.dns_host_suffix))
+  upper                        = false
+  lower                        = true
+  number                       = false
+  special                      = false
 }
 
 locals {
