@@ -22,6 +22,8 @@ resource azurerm_role_assignment spn_network_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Network Contributor"
   principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
+
+  count                        = var.configure_access_control ? 1 : 0
 }
 
 # AKS needs permission for BYO DNS
@@ -29,6 +31,8 @@ resource azurerm_role_assignment spn_dns_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Private DNS Zone Contributor"
   principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
+
+  count                        = var.configure_access_control ? 1 : 0
 }
 
 # Requires Terraform owner access to resource group, in order to be able to perform access management
@@ -36,6 +40,8 @@ resource azurerm_role_assignment spn_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Virtual Machine Contributor"
   principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
+
+  count                        = var.configure_access_control ? 1 : 0
 }
 
 # Grant Terraform user Cluster Admin role
@@ -43,6 +49,8 @@ resource azurerm_role_assignment terraform_cluster_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Azure Kubernetes Service Cluster Admin Role"
   principal_id                 = var.client_object_id
+
+  count                        = var.configure_access_control ? 1 : 0
 }
 
 data azurerm_kubernetes_service_versions current {

@@ -30,6 +30,7 @@ module aks {
   admin_username               = "aksadmin"
   application_gateway_subnet_id= module.network.application_gateway_subnet_id
   client_object_id             = data.azuread_client_config.current.object_id
+  configure_access_control     = var.configure_access_control
   dns_prefix                   = var.resource_prefix
   dns_host_suffix              = var.dns_host_suffix
   location                     = var.location
