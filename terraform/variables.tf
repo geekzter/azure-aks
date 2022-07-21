@@ -2,6 +2,16 @@ variable address_space {
   default     = "10.32.100.0/23"
 }
 
+variable application_name {
+  description                  = "Value of 'application' resource tag"
+  default                      = "Kubernetes"
+}
+
+variable application_owner {
+  description                  = "Value of 'owner' resource tag"
+  default                      = "" # Empty string takes objectId of current user
+}
+
 variable configure_kubernetes {
   type        = bool
   default     = false

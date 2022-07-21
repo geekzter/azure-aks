@@ -30,7 +30,7 @@ module aks {
   admin_username               = "aksadmin"
   application_gateway_subnet_id= module.network.application_gateway_subnet_id
   client_object_id             = data.azuread_client_config.current.object_id
-  dns_prefix                   = "ew-aks"
+  dns_prefix                   = var.resource_prefix
   dns_host_suffix              = var.dns_host_suffix
   location                     = var.location
   kube_config_path             = local.kube_config_absolute_path
