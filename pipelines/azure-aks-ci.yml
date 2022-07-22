@@ -95,8 +95,6 @@ variables:
   value: '$(Build.SourcesDirectory)/scripts'
 - name: 'terraformDirectory'
   value: '$(Build.SourcesDirectory)/terraform'
-- name: 'TF_VAR_resource_prefix'
-  value: 'k8s'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
 
