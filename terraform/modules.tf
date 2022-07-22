@@ -5,6 +5,7 @@ module network {
   address_space                = var.address_space
   location                     = var.location
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
+  nsg_reassign_wait_minutes    = var.nsg_reassign_wait_minutes
   peer_network_has_gateway     = var.peer_network_has_gateway
   peer_network_id              = var.peer_network_id
   tags                         = azurerm_resource_group.rg.tags

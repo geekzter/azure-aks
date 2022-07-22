@@ -151,7 +151,7 @@ resource random_string application_gateway_domain_label {
   length                       = min(16,63-length(var.dns_host_suffix))
   upper                        = false
   lower                        = true
-  number                       = false
+  numeric                      = false
   special                      = false
 }
 

@@ -56,7 +56,7 @@ resource azurerm_network_security_group bastion_nsg {
 }
 resource azurerm_network_security_rule https_inbound {
   name                         = "AllowHttpsInbound"
-  priority                     = 120
+  priority                     = 220
   direction                    = "Inbound"
   access                       = "Allow"
   protocol                     = "Tcp"
@@ -69,7 +69,7 @@ resource azurerm_network_security_rule https_inbound {
 }
 resource azurerm_network_security_rule gateway_manager_inbound {
   name                         = "AllowGatewayManagerInbound"
-  priority                     = 130
+  priority                     = 230
   direction                    = "Inbound"
   access                       = "Allow"
   protocol                     = "Tcp"
@@ -82,7 +82,7 @@ resource azurerm_network_security_rule gateway_manager_inbound {
 }
 resource azurerm_network_security_rule load_balancer_inbound {
   name                         = "AllowLoadBalancerInbound"
-  priority                     = 140
+  priority                     = 240
   direction                    = "Inbound"
   access                       = "Allow"
   protocol                     = "Tcp"
@@ -95,7 +95,7 @@ resource azurerm_network_security_rule load_balancer_inbound {
 }
 resource azurerm_network_security_rule bastion_host_communication_inbound {
   name                         = "AllowBastionHostCommunication"
-  priority                     = 150
+  priority                     = 250
   direction                    = "Inbound"
   access                       = "Allow"
   protocol                     = "*"
@@ -108,7 +108,7 @@ resource azurerm_network_security_rule bastion_host_communication_inbound {
 }
 resource azurerm_network_security_rule ras_outbound {
   name                         = "AllowSshRdpOutbound"
-  priority                     = 100
+  priority                     = 200
   direction                    = "Outbound"
   access                       = "Allow"
   protocol                     = "*"
@@ -121,7 +121,7 @@ resource azurerm_network_security_rule ras_outbound {
 }
 resource azurerm_network_security_rule azure_outbound {
   name                         = "AllowAzureCloudOutbound"
-  priority                     = 110
+  priority                     = 210
   direction                    = "Outbound"
   access                       = "Allow"
   protocol                     = "Tcp"
@@ -134,7 +134,7 @@ resource azurerm_network_security_rule azure_outbound {
 }
 resource azurerm_network_security_rule bastion_host_communication_oubound {
   name                         = "AllowBastionCommunication"
-  priority                     = 120
+  priority                     = 220
   direction                    = "Outbound"
   access                       = "Allow"
   protocol                     = "*"
@@ -147,7 +147,7 @@ resource azurerm_network_security_rule bastion_host_communication_oubound {
 }
 resource azurerm_network_security_rule get_session_oubound {
   name                         = "AllowGetSessionInformation"
-  priority                     = 130
+  priority                     = 230
   direction                    = "Outbound"
   access                       = "Allow"
   protocol                     = "*"

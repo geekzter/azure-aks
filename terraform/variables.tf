@@ -58,6 +58,11 @@ variable node_size {
   default                      = "Standard_D2s_v3"
 }
 
+variable nsg_reassign_wait_minutes {
+  type                         = number
+  default                      = 0
+}
+
 variable peer_network_has_gateway {
   type                         = bool
   default                      = false
@@ -95,6 +100,15 @@ variable run_id {
 variable ssh_public_key_file {
   type                         = string
   default                      = "~/.ssh/id_rsa.pub"
+}
+
+variable subscription_id {
+  description                  = "Configure subscription_id independent from ARM_SUBSCRIPTION_ID"
+  default                      = null
+}
+variable tenant_id {
+  description                  = "Configure tenant_id independent from ARM_TENANT_ID"
+  default                      = null
 }
 
 variable workspace_location {
