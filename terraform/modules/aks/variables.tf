@@ -4,6 +4,9 @@ variable client_object_id {}
 variable configure_access_control {
   type                         = bool
 }
+variable deploy_application_gateway {
+  type                         = bool
+}
 variable dns_prefix {}
 variable dns_host_suffix {}
 variable kube_config_path {}

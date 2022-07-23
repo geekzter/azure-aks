@@ -5,7 +5,7 @@ module network {
   address_space                = var.address_space
   location                     = var.location
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
-  nsg_reassign_wait_minutes    = var.nsg_reassign_wait_minutes
+  nsg_reassign_wait_minutes    = var.deploy_application_gateway ? var.nsg_reassign_wait_minutes : 0
   peer_network_has_gateway     = var.peer_network_has_gateway
   peer_network_id              = var.peer_network_id
   tags                         = azurerm_resource_group.rg.tags
@@ -32,6 +32,7 @@ module aks {
   application_gateway_subnet_id= module.network.application_gateway_subnet_id
   client_object_id             = data.azuread_client_config.current.object_id
   configure_access_control     = var.configure_access_control
+  deploy_application_gateway   = var.deploy_application_gateway
   dns_prefix                   = var.resource_prefix
   dns_host_suffix              = var.dns_host_suffix
   location                     = var.location

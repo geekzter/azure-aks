@@ -31,12 +31,16 @@ try {
 
     # AGIC Demo: https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing#deploy-a-sample-application-using-agic
     $agicFQDN = (Get-TerraformOutput application_gateway_fqdn)
-    if ($agicFQDN -and $Deploy) {
-        Write-Host "`nDeploying ASP.NET App..."
-        kubectl apply -f (Join-Path $manifestsDirectory aspnetapp.yaml) 2>&1
-        if ($DebugPreference -ine "SilentlyContinue") {
-            kubectl describe ingress aspnetapp 2>&1
-            kubectl get ingress 2>&1
+    if ($Deploy) {
+        if ($agicFQDN) {
+            Write-Host "`nDeploying ASP.NET App..."
+            kubectl apply -f (Join-Path $manifestsDirectory aspnetapp.yaml) 2>&1
+            if ($DebugPreference -ine "SilentlyContinue") {
+                kubectl describe ingress aspnetapp 2>&1
+                kubectl get ingress 2>&1
+            }
+        } else {
+            Write-Warning "`nNo Application Gateway found. ASP.NET App will not be deployed."
         }
     }
 

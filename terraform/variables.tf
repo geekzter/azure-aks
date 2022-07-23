@@ -36,6 +36,14 @@ variable deploy_bastion {
   description                  = "Whether to deploy managed bastion"
 }
 
+# Turn this off if you can't open required ports (65200-65535, ApplicationGatewaySubnetInboundTrafficBlockedByNetworkSecurityGroup)
+# https://docs.microsoft.com/en-us/azure/application-gateway/configuration-infrastructure#network-security-groups
+variable deploy_application_gateway {
+  type                         = bool
+  default                      = true
+  description                  = "Whether to deploy Application Gateway"
+}
+
 variable dns_host_suffix {
   default                      = "mycicd"
 }

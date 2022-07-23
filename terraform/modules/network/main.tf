@@ -88,7 +88,6 @@ resource azurerm_network_security_rule allow_application_gateway_management {
   source_port_range            = "*"
   destination_port_range       = "65200-65535" # Unblocks ApplicationGatewaySubnetInboundTrafficBlockedByNetworkSecurityGroup
   source_address_prefix        = "GatewayManager"
-  # destination_address_prefixes = [local.waf_cidr]
   destination_address_prefix   = "*"
   resource_group_name          = azurerm_network_security_group.waf_nsg.resource_group_name
   network_security_group_name  = azurerm_network_security_group.waf_nsg.name
@@ -102,7 +101,6 @@ resource azurerm_network_security_rule allow_azure_loadbalancer {
   source_port_range            = "*"
   destination_port_range       = "*"
   source_address_prefix        = "AzureLoadBalancer"
-  # destination_address_prefixes = [local.waf_cidr]
   destination_address_prefix   = "*"
   resource_group_name          = azurerm_network_security_group.waf_nsg.resource_group_name
   network_security_group_name  = azurerm_network_security_group.waf_nsg.name
