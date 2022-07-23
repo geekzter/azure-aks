@@ -22,6 +22,8 @@ resource azurerm_role_assignment spn_network_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Network Contributor"
   principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
+
+  count                        = var.configure_access_control ? 1 : 0
 }
 
 # AKS needs permission for BYO DNS
@@ -29,6 +31,8 @@ resource azurerm_role_assignment spn_dns_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Private DNS Zone Contributor"
   principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
+
+  count                        = var.configure_access_control ? 1 : 0
 }
 
 # Requires Terraform owner access to resource group, in order to be able to perform access management
@@ -36,6 +40,8 @@ resource azurerm_role_assignment spn_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Virtual Machine Contributor"
   principal_id                 = azurerm_user_assigned_identity.aks_identity.principal_id
+
+  count                        = var.configure_access_control ? 1 : 0
 }
 
 # Grant Terraform user Cluster Admin role
@@ -43,6 +49,8 @@ resource azurerm_role_assignment terraform_cluster_permission {
   scope                        = var.resource_group_id
   role_definition_name         = "Azure Kubernetes Service Cluster Admin Role"
   principal_id                 = var.client_object_id
+
+  count                        = var.configure_access_control ? 1 : 0
 }
 
 data azurerm_kubernetes_service_versions current {
@@ -90,10 +98,13 @@ resource azurerm_kubernetes_cluster aks {
     identity_ids               = [azurerm_user_assigned_identity.aks_identity.id]
   }
 
-  ingress_application_gateway {
-    gateway_name               = "applicationgateway"
-    subnet_id                  = var.application_gateway_subnet_id
-  }
+  dynamic "ingress_application_gateway" {
+    for_each = range(var.deploy_application_gateway ? 1 : 0) 
+    content {
+      gateway_name               = "applicationgateway"
+      subnet_id                  = var.application_gateway_subnet_id
+    }
+  }  
 
   # local_account_disabled       = true # Will become default in 1.24
 
@@ -138,12 +149,14 @@ data azurerm_private_endpoint_connection api_server_endpoint {
 data azurerm_application_gateway app_gw {
   name                         = split("/",azurerm_kubernetes_cluster.aks.ingress_application_gateway[0].effective_gateway_id)[8]
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
+
+  count                        = var.deploy_application_gateway ? 1 : 0
 }
 resource random_string application_gateway_domain_label {
   length                       = min(16,63-length(var.dns_host_suffix))
   upper                        = false
   lower                        = true
-  number                       = false
+  numeric                      = false
   special                      = false
 }
 
@@ -153,16 +166,18 @@ locals {
 
 resource null_resource application_gateway_domain_label {
   provisioner local-exec {
-    command                    = "az network public-ip update --dns-name ${local.application_gateway_domain_label} -n ${data.azurerm_application_gateway.app_gw.name}-appgwpip -g ${azurerm_kubernetes_cluster.aks.node_resource_group} --subscription ${data.azurerm_subscription.primary.subscription_id} --query 'dnsSettings'"
+    command                    = "az network public-ip update --dns-name ${local.application_gateway_domain_label} -n ${data.azurerm_application_gateway.app_gw.0.name}-appgwpip -g ${azurerm_kubernetes_cluster.aks.node_resource_group} --subscription ${data.azurerm_subscription.primary.subscription_id} --query 'dnsSettings'"
   }
 
+  count                        = var.deploy_application_gateway ? 1 : 0
   depends_on                   = [random_string.application_gateway_domain_label]
 }
 
 data azurerm_public_ip application_gateway_public_ip {
-  name                         = "${data.azurerm_application_gateway.app_gw.name}-appgwpip"
+  name                         = "${data.azurerm_application_gateway.app_gw.0.name}-appgwpip"
   resource_group_name          = azurerm_kubernetes_cluster.aks.node_resource_group
 
+  count                        = var.deploy_application_gateway ? 1 : 0
   depends_on                   = [null_resource.application_gateway_domain_label]
 }
 

@@ -3,15 +3,15 @@ output aks_id {
 }
 
 output application_gateway_id {
-  value       = azurerm_kubernetes_cluster.aks.ingress_application_gateway[0].effective_gateway_id
+  value       = var.deploy_application_gateway ? azurerm_kubernetes_cluster.aks.ingress_application_gateway[0].effective_gateway_id : null
 }
 
 output application_gateway_fqdn {
-  value       = data.azurerm_public_ip.application_gateway_public_ip.fqdn
+  value       = var.deploy_application_gateway ? data.azurerm_public_ip.application_gateway_public_ip.0.fqdn : null
 }
 
 output application_gateway_public_ip {
-  value       = data.azurerm_public_ip.application_gateway_public_ip.ip_address
+  value       = var.deploy_application_gateway ? data.azurerm_public_ip.application_gateway_public_ip.0.ip_address : null
 }
 
 output kube_config {

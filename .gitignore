@@ -30,6 +30,8 @@ override.tf.json
 # !example_override.tf
 
 # Ignore files with sensitive information
+*.auto.tfvars
+*.tfvars
 backend.tf
 
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan

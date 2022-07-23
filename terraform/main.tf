@@ -2,7 +2,7 @@ resource random_string password {
   length                       = 12
   upper                        = true
   lower                        = true
-  number                       = true
+  numeric                      = true
   special                      = true
 # override_special             = "!@#$%&*()-_=+[]{}<>:?" # default
 # Avoid characters that may cause shell scripts to break
@@ -13,12 +13,13 @@ resource random_string suffix {
   length                       = 4
   upper                        = false
   lower                        = true
-  number                       = false
+  numeric                      = false
   special                      = false
 }
 
 locals {
-  aks_name                     = "aks-${terraform.workspace}-${local.suffix}"
+  aks_name                     = "${var.resource_prefix}-${terraform.workspace}-${local.suffix}"
+  owner                        = var.application_owner != "" ? var.application_owner : data.azuread_client_config.current.object_id
   kube_config_relative_path    = var.kube_config_path != "" ? var.kube_config_path : "../.kube/${local.workspace_moniker}config"
   kube_config_absolute_path    = var.kube_config_path != "" ? var.kube_config_path : "${path.root}/../.kube/${local.workspace_moniker}config"
 
@@ -43,8 +44,10 @@ resource azurerm_resource_group rg {
   location                     = var.location
 
   tags                         = {
-    application                = "Kubernetes"
+    application                = var.application_name
     environment                = local.environment
+    github-repo                = "https://github.com/geekzter/azure-aks"
+    owner                      = local.owner
     provisioner                = "terraform"
     provisioner-client-id      = data.azurerm_client_config.current.client_id
     provisioner-object-id      = data.azuread_client_config.current.object_id
@@ -57,7 +60,7 @@ resource azurerm_resource_group rg {
 }
 
 resource azurerm_container_registry acr {
-  name                         = "${lower(var.resource_prefix)}${terraform.workspace}reg${local.suffix}"
+  name                         = "${lower(replace(var.resource_prefix,"/\\W/",""))}${terraform.workspace}reg${local.suffix}"
   resource_group_name          = azurerm_resource_group.rg.name
   location                     = var.location
   sku                          = "Premium"

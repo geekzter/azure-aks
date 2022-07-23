@@ -19,11 +19,25 @@ terraform {
 # ARM_SUBSCRIPTION_ID, ARM_CLIENT_ID, ARM_CLIENT_SECRET and ARM_TENANT_ID
 provider azurerm {
   features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
     virtual_machine {
       # Don't do this in production
       delete_os_disk_on_deletion = true
     }
   }
+
+  subscription_id              = var.subscription_id != null && var.subscription_id != "" ? var.subscription_id : data.azurerm_subscription.default.subscription_id
+  tenant_id                    = var.tenant_id != null && var.tenant_id != "" ? var.tenant_id : data.azurerm_subscription.default.tenant_id
+}
+
+provider azurerm {
+  alias                        = "default"
+  features {}
+}
+data azurerm_subscription default {
+  provider                     = azurerm.default
 }
 
 # Use AKS to prepare Helm provider

@@ -1,6 +1,6 @@
 # Network Isolated AKS
 
-[![Build Status](https://dev.azure.com/ericvan/VDC/_apis/build/status/azure-aks-ci?branchName=main)](https://dev.azure.com/ericvan/VDC/_build/latest?definitionId=85&branchName=main)
+[![Build Status](https://dev.azure.com/ericvan/PipelineSamples/_apis/build/status/workloads/azure-aks-ci?branchName=naming-update)](https://dev.azure.com/ericvan/PipelineSamples/_build/latest?definitionId=155&branchName=naming-update)
 
 This repo lets you provision a network isolated Azure Kubernetes Service, customizing egress, ingress with both Internal Load Balancer and Application Gateway, and the Kubernetes API Server (AKS management nodes) connected via Private Link. It uses Terraform as that can create all the Azure AD, Azure and Kubernetes resources required.
  

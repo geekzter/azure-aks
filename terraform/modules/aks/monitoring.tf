@@ -125,6 +125,8 @@ resource azurerm_monitor_diagnostic_setting application_gateway_logs {
       enabled                  = false
     }
   }
+
+  count                        = var.deploy_application_gateway ? 1 : 0
 }
 
 resource azurerm_monitor_diagnostic_setting scale_set {
