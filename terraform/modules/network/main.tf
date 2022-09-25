@@ -5,13 +5,13 @@ data http local_public_ip {
 
 data http local_public_prefix {
 # Get public IP prefix of the machine running this terraform template
-  url                          = "https://stat.ripe.net/data/network-info/data.json?resource=${chomp(data.http.local_public_ip.body)}"
+  url                          = "https://stat.ripe.net/data/network-info/data.json?resource=${chomp(data.http.local_public_ip.response_body)}"
 }
 
 locals {
   admin_cidrs                  = [
-                                  cidrsubnet("${chomp(data.http.local_public_ip.body)}/30",0,0), # /32 not allowed in network_rules
-                                  jsondecode(chomp(data.http.local_public_prefix.body)).data.prefix
+                                  cidrsubnet("${chomp(data.http.local_public_ip.response_body)}/30",0,0), # /32 not allowed in network_rules
+                                  jsondecode(chomp(data.http.local_public_prefix.response_body)).data.prefix
   ] 
   bastion_cidr                 = cidrsubnet(azurerm_virtual_network.network.address_space[0],3,2) # /26, assuming network is /23
   firewall_cidr                = cidrsubnet(azurerm_virtual_network.network.address_space[0],3,0)
@@ -305,14 +305,14 @@ resource azurerm_subnet paas_subnet {
   virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = var.resource_group_name
   address_prefixes             = [local.paas_cidr]
-  enforce_private_link_endpoint_network_policies = true
+  private_endpoint_network_policies_enabled = true
 }
 resource azurerm_subnet nodes_subnet {
   name                         = "KubernetesClusterNodes"
   virtual_network_name         = azurerm_virtual_network.network.name
   resource_group_name          = var.resource_group_name
   address_prefixes             = [local.nodes_cidr]
-  enforce_private_link_endpoint_network_policies = true
+  private_endpoint_network_policies_enabled = true
 }
 
 resource azurerm_route_table user_defined_routes {
