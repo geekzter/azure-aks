@@ -1,10 +1,10 @@
 terraform {
   required_providers {
     azuread                    = "~> 2.12"
-    azurerm                    = "~> 3.0"
+    azurerm                    = "~> 3.24"
     external                   = "~> 2.1"
     helm                       = "~> 2.0"
-    http                       = "~> 2.1"
+    http                       = "~> 3.1"
     kubernetes                 = "~> 2.0"
     local                      = "~> 2.1"
     null                       = "~> 3.1"
