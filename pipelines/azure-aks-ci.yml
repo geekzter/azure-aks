@@ -493,18 +493,7 @@ jobs:
             }
 
             # Remove VNet peerings
-            if ($env:PIPELINE_DEMO_AGENT_VIRTUAL_NETWORK_ID) {
-              $peeringIDs = $(az network vnet show --ids $env:PIPELINE_DEMO_AGENT_VIRTUAL_NETWORK_ID --query "virtualNetworkPeerings[?starts_with(name,'k8s-${env:TF_WORKSPACE}-')].id" -o tsv 2>$null)
-              if ($peeringIDs) {
-                Write-Host "Removing virtual network peerings `"${peeringIDs}`"..."
-                &{ # az writes information to stderr
-                  $ErrorActionPreference = 'SilentlyContinue'
-                  az resource delete --ids $peeringIDs 2>&1
-                }
-              } else {
-                Write-Host "No virtual network peerings to remove"
-              }
-            }
+            ./cleanup_peerings.ps1
           addSpnToEnvironment: true
           useGlobalConfig: true
           failOnStandardError: true
