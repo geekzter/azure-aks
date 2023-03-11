@@ -34,9 +34,8 @@ resource azurerm_monitor_diagnostic_setting network {
   target_resource_id           = azurerm_virtual_network.network.id
   log_analytics_workspace_id   = var.log_analytics_workspace_id
 
-  log {
+  enabled_log {
     category                   = "VMProtectionAlerts"
-    enabled                    = true
 
     retention_policy {
       enabled                  = false
