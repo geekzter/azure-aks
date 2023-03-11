@@ -1,5 +1,5 @@
 locals {
-  kubernetes_version           = var.kubernetes_version != null && var.kubernetes_version != "" ? var.kubernetes_version : data.azurerm_kubernetes_service_versions.current.latest_version
+  # kubernetes_version           = var.kubernetes_version != null && var.kubernetes_version != "" ? var.kubernetes_version : data.azurerm_kubernetes_service_versions.current.latest_version
   resource_group_name          = element(split("/",var.resource_group_id),length(split("/",var.resource_group_id))-1)
 }
 
@@ -53,34 +53,38 @@ resource azurerm_role_assignment terraform_cluster_permission {
   count                        = var.configure_access_control ? 1 : 0
 }
 
-data azurerm_kubernetes_service_versions current {
-  location                     = var.location
-  include_preview              = false
-}
+# data azurerm_kubernetes_service_versions current {
+#   location                     = var.location
+#   include_preview              = false
+# }
 
 resource azurerm_kubernetes_cluster aks {
   name                         = var.name
   location                     = var.location
   resource_group_name          = local.resource_group_name
+  node_resource_group          = "${local.resource_group_name}-k8s-nodes"
   dns_prefix                   = var.dns_prefix
 
   # Triggers resource to be recreated
-  kubernetes_version           = local.kubernetes_version
+  kubernetes_version           = var.kubernetes_version
 
   automatic_channel_upgrade    = "stable"
 
-  azure_active_directory_role_based_access_control {
-    admin_group_object_ids     = [var.client_object_id]
-    azure_rbac_enabled         = true
-    managed                    = true
-  }
+  dynamic azure_active_directory_role_based_access_control {
+    for_each = range(var.configure_access_control ? 1 : 0) 
+    content {
+      admin_group_object_ids   = [var.client_object_id]
+      azure_rbac_enabled       = true
+      managed                  = true
+    }
+  }  
 
   azure_policy_enabled         = true
 
   default_node_pool {
     enable_auto_scaling        = true
     enable_host_encryption     = false # Requires 'Microsoft.Compute/EncryptionAtHost' feature
-    enable_node_public_ip      = false
+    enable_node_public_ip      = var.enable_node_public_ip
     min_count                  = 3
     max_count                  = 10
     name                       = "default"
@@ -106,12 +110,18 @@ resource azurerm_kubernetes_cluster aks {
     }
   }  
 
-  # local_account_disabled       = true # Will become default in 1.24
+  kubelet_identity {
+    client_id                  = azurerm_user_assigned_identity.aks_identity.client_id
+    object_id                  = azurerm_user_assigned_identity.aks_identity.principal_id
+    user_assigned_identity_id  = azurerm_user_assigned_identity.aks_identity.id
+  }
+
+  # local_account_disabled       = var.configure_access_control
 
   network_profile {
-    network_plugin             = "azure"
-    network_policy             = "azure"
-    outbound_type              = "userDefinedRouting"
+    network_plugin             = var.network_plugin
+    network_policy             = var.network_policy
+    outbound_type              = var.network_outbound_type
   }
 
   oms_agent {
@@ -119,14 +129,18 @@ resource azurerm_kubernetes_cluster aks {
   }
 
   private_cluster_enabled      = var.private_cluster_enabled
-  private_dns_zone_id          = "System"
+  private_dns_zone_id          = var.private_cluster_enabled ? "System" : null
   #private_cluster_public_fqdn_enabled = true
 
   role_based_access_control_enabled = true
 
   lifecycle {
     ignore_changes             = [
-      default_node_pool.0.node_count # Ignore changes made by autoscaling
+      default_node_pool.0.node_count, # Ignore changes made by autoscaling
+
+      # BUG: kubelet_identity triggers replacement in azurerm 3.39.1
+      kubelet_identity.0.client_id,
+      kubelet_identity.0.object_id,
     ]
   }
 

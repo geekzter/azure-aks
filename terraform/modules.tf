@@ -35,10 +35,14 @@ module aks {
   deploy_application_gateway   = var.deploy_application_gateway
   dns_prefix                   = var.resource_prefix
   dns_host_suffix              = var.dns_host_suffix
+  enable_node_public_ip        = !var.deploy_network || var.gateway_type == "None"
   location                     = var.location
   kube_config_path             = local.kube_config_absolute_path
   kubernetes_version           = var.kubernetes_version
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
+  network_outbound_type        = var.deploy_network ? (var.gateway_type == "Firewall" ? "userDefinedRouting" : (var.gateway_type == "NATGateway" ? "userAssignedNATGateway" : null)) : null
+  network_plugin               = var.deploy_network ? "azure" : "kubenet"
+  network_policy               = var.deploy_network ? "azure" : "calico"
   node_size                    = var.node_size
   node_subnet_id               = module.network.nodes_subnet_id
   private_cluster_enabled      = var.private_cluster_enabled

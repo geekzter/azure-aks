@@ -296,6 +296,7 @@ jobs:
           if ($${{ parameters.useDefaultK8sVersion }} -and !($env:TF_VAR_kubernetes_version -or $env:TF_VAR_KUBERNETES_VERSION)) {
             # Use Azure CLI default (Terraform may use a different one)
             az aks get-versions -l $(TF_VAR_location) --query "orchestrators[?default].orchestratorVersion" -o tsv | Set-Item env:TF_VAR_kubernetes_version
+            Write-Host "Using default Kubernetes version ${env:TF_VAR_kubernetes_version}" in region ${env:TF_VAR_location}"
           }
 
           # Use pipeline agent VNet as network to peer from

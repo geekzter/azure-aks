@@ -44,8 +44,24 @@ variable deploy_application_gateway {
   description                  = "Whether to deploy Application Gateway"
 }
 
+variable deploy_network {
+  description                  = "Deploys Virtual Network"
+  default                      = true
+  type                         = bool
+}
+
 variable dns_host_suffix {
   default                      = "mycicd"
+}
+
+variable gateway_type {
+  type                         = string
+  default                      = "Firewall"
+  nullable                     = false
+  validation {
+    condition                  = var.gateway_type == "Firewall" || var.gateway_type == "NATGateway" || var.gateway_type == "NoGateway"
+    error_message              = "The gateway_type must be 'Firewall', 'NATGateway' or 'NoGateway'"
+  }
 }
 
 variable kube_config_path {
@@ -54,7 +70,7 @@ variable kube_config_path {
 }
 
 variable kubernetes_version {
-  default                      = ""
+  default                      = null
 }
 
 variable location {

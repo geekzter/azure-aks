@@ -28,6 +28,10 @@ function AzLogin (
         }
     }
 
+    if ($env:ARM_SUBSCRIPTION_ID) {
+        az account set -s $env:ARM_SUBSCRIPTION_ID -o none
+    }
+
     if ($DisplayMessages) {
         if ($env:ARM_SUBSCRIPTION_ID -or ($(az account list --query "length([])" -o tsv) -eq 1)) {
             Write-Host "Using subscription '$(az account show --query "name" -o tsv)'"
@@ -51,10 +55,6 @@ function AzLogin (
                 Write-Host "Using subscription '$(az account show --query "name" -o tsv)', set `$env:ARM_SUBSCRIPTION_ID if you want to use another one"
             }
         }
-    }
-
-    if ($env:ARM_SUBSCRIPTION_ID) {
-        az account set -s $env:ARM_SUBSCRIPTION_ID -o none
     }
 
     # Populate Terraform azurerm variables where possible

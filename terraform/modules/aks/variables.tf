@@ -9,11 +9,17 @@ variable deploy_application_gateway {
 }
 variable dns_prefix {}
 variable dns_host_suffix {}
+variable enable_node_public_ip {
+  type        = bool
+}
 variable kube_config_path {}
 variable kubernetes_version {}
 variable location {}
 variable log_analytics_workspace_id {}
 variable name {}
+variable network_plugin {}
+variable network_policy {}
+variable network_outbound_type {}
 variable node_size {}
 variable node_subnet_id {}
 variable private_cluster_enabled {
