@@ -22,69 +22,30 @@ resource azurerm_monitor_diagnostic_setting aks {
   target_resource_id           = azurerm_kubernetes_cluster.aks.id
   log_analytics_workspace_id   = var.log_analytics_workspace_id
 
-  log {
+  enabled_log {
     category                   = "kube-apiserver"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "kube-audit"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "kube-audit-admin"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "kube-controller-manager"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "kube-scheduler"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "cluster-autoscaler"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "guard"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 
   metric {
     category                   = "AllMetrics"
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 } 
 
@@ -93,37 +54,18 @@ resource azurerm_monitor_diagnostic_setting application_gateway_logs {
   target_resource_id           = azurerm_kubernetes_cluster.aks.ingress_application_gateway[0].effective_gateway_id
   log_analytics_workspace_id   = var.log_analytics_workspace_id
 
-  log {
+  enabled_log {
     category                   = "ApplicationGatewayAccessLog"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "ApplicationGatewayPerformanceLog"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "ApplicationGatewayFirewallLog"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }  
   
   metric {
     category                   = "AllMetrics"
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 
   count                        = var.deploy_application_gateway ? 1 : 0
@@ -136,10 +78,6 @@ resource azurerm_monitor_diagnostic_setting scale_set {
 
   metric {
     category                   = "AllMetrics"
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 
   lifecycle {
