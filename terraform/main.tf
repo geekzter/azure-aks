@@ -73,29 +73,15 @@ resource azurerm_monitor_diagnostic_setting acr {
   target_resource_id           = azurerm_container_registry.acr.id
   log_analytics_workspace_id   = azurerm_log_analytics_workspace.log_analytics.id
 
-  log {
+  enabled_log {
     category                   = "ContainerRegistryRepositoryEvents"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "ContainerRegistryLoginEvents"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 
   metric {
     category                   = "AllMetrics"
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 } 
 

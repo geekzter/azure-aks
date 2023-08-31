@@ -41,37 +41,18 @@ resource azurerm_monitor_diagnostic_setting firewall_pip {
   target_resource_id           = azurerm_public_ip.firewall_pip.id
   log_analytics_workspace_id   = var.log_analytics_workspace_id
 
-  log {
+  enabled_log {
     category                   = "DDoSProtectionNotifications"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "DDoSMitigationFlowLogs"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
-  log {
+  enabled_log {
     category                   = "DDoSMitigationReports"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }  
 
   metric {
     category                   = "AllMetrics"
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 } 
 
@@ -98,29 +79,15 @@ resource azurerm_monitor_diagnostic_setting firewall_logs {
   target_resource_id           = azurerm_firewall.gateway.id
   log_analytics_workspace_id   = var.log_analytics_workspace_id
 
-  log {
+  enabled_log {
     category                   = "AzureFirewallApplicationRule"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 
-  log {
+  enabled_log {
     category                   = "AzureFirewallNetworkRule"
-    enabled                    = true
-
-    retention_policy {
-      enabled                  = false
-    }
   }
   
   metric {
     category                   = "AllMetrics"
-
-    retention_policy {
-      enabled                  = false
-    }
   }
 }
