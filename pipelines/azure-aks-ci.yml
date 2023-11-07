@@ -204,7 +204,7 @@ jobs:
         displayName: 'Prepare Terraform config (latest version)'
         workingDirectory: '$(terraformDirectory)'
 
-    - task: TerraformInstaller@0
+    - task: TerraformInstaller@1
       displayName: 'Install terraform'
       inputs:
         terraformVersion: '$(terraformConfig.version)'
@@ -222,7 +222,7 @@ jobs:
         condition: and(succeeded(), eq(variables['unpinTerraformProviders'],'true'))
         workingDirectory: '$(terraformDirectory)'
 
-    - task: TerraformCLI@0
+    - task: TerraformCLI@1
       displayName: 'Terraform init'
       inputs:
         command: 'init'
@@ -429,7 +429,7 @@ jobs:
         condition: succeeded()
 
     - ${{ if not(eq(parameters.destroy, 'Never')) }}:
-      - task: TerraformCLI@0
+      - task: TerraformCLI@1
         displayName: 'Terraform destroy (${{ lower(parameters.destroy) }})'
         ${{ if eq(parameters.destroy, 'Always') }}:
           condition: succeededOrFailed()
