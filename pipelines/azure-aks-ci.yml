@@ -73,6 +73,13 @@ schedules:
     include:
     - main
 
+resources:
+  repositories:
+  - repository: azure-identity-scripts
+    type: github
+    endpoint: github.com # Service Connection name
+    name: geekzter/azure-identity-scripts
+
 variables:
 - group: 'aks-ci'
 - name: 'jobTimeOutMinutes'
@@ -89,12 +96,14 @@ variables:
   value: 0
 - name: 'TF_WORKSPACE'
   value: ${{ parameters.workspace }}
+- name: 'identityScriptDirectory'
+  value: '$(Build.SourcesDirectory)/azure-identity-scripts/scripts/azure-devops'
 - name: 'manifestDirectory'
-  value: '$(Build.SourcesDirectory)/manifests'
+  value: '$(Build.SourcesDirectory)/azure-aks/manifests'
 - name: 'scriptDirectory'
-  value: '$(Build.SourcesDirectory)/scripts'
+  value: '$(Build.SourcesDirectory)/azure-aks/scripts'
 - name: 'terraformDirectory'
-  value: '$(Build.SourcesDirectory)/terraform'
+  value: '$(Build.SourcesDirectory)/azure-aks/terraform'
 - name: 'TF_VAR_run_id'
   value: '$(Build.BuildId)'
 
@@ -159,6 +168,9 @@ jobs:
     clean: all
 
   steps:
+    - checkout: self
+    - checkout: azure-identity-scripts
+
     - ${{ if parameters.clear }}:
       - task: AzureCLI@2
         name: clear
@@ -248,7 +260,7 @@ jobs:
           scriptType: pscore
           scriptLocation: inlineScript
           inlineScript: |
-            $(scriptDirectory)/set_terraform_azurerm_vars.ps1
+            $(identityScriptDirectory)/set_terraform_azurerm_vars.ps1
 
             $terraformState = (terraform state pull | ConvertFrom-Json)
             if ($terraformState.resources) {
@@ -343,7 +355,7 @@ jobs:
         scriptType: pscore
         scriptLocation: inlineScript
         inlineScript: |
-          ./set_terraform_azurerm_vars.ps1
+          $(identityScriptDirectory)/set_terraform_azurerm_vars.ps1
           ./deploy.ps1 -apply -force
         addSpnToEnvironment: true
         useGlobalConfig: true
@@ -393,7 +405,7 @@ jobs:
               Set-PSDebug -Trace 2
             }
             
-            ./set_terraform_azurerm_vars.ps1
+            $(identityScriptDirectory)/set_terraform_azurerm_vars.ps1
             ./kube_config.ps1
             ./deploy_app.ps1
           addSpnToEnvironment: true
@@ -412,7 +424,7 @@ jobs:
           scriptType: pscore
           scriptLocation: inlineScript
           inlineScript: |
-            ./set_terraform_azurerm_vars.ps1
+            $(identityScriptDirectory)/set_terraform_azurerm_vars.ps1
             ./deploy.ps1 -apply -force
           addSpnToEnvironment: true
           useGlobalConfig: true
@@ -514,7 +526,7 @@ jobs:
           scriptType: pscore
           scriptLocation: inlineScript
           inlineScript: |
-            $(scriptDirectory)/set_terraform_azurerm_vars.ps1
+            $(identityScriptDirectory)/set_terraform_azurerm_vars.ps1
 
             $terraformState = (terraform state pull | ConvertFrom-Json)
             if ($terraformState.resources) {
