@@ -99,7 +99,7 @@ variables:
 - name: 'manifestDirectory'
   value: '$(Build.SourcesDirectory)/azure-aks/manifests'
 - name: 'identityScriptDirectory'
-  value: '$(identityRepository)/azure-identity-scripts/scripts/azure-devops'
+  value: '$(Build.SourcesDirectory)/azure-identity-scripts/scripts/azure-devops'
 - name: 'scriptDirectory'
   value: '$(Build.SourcesDirectory)/azure-aks/scripts'
 - name: 'terraformDirectory'
