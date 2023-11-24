@@ -96,10 +96,10 @@ variables:
   value: 0
 - name: 'TF_WORKSPACE'
   value: ${{ parameters.workspace }}
-- name: 'manifestDirectory'
-  value: '$(Build.SourcesDirectory)/azure-aks/manifests'
 - name: 'identityScriptDirectory'
   value: '$(Build.SourcesDirectory)/azure-identity-scripts/scripts/azure-devops'
+- name: 'manifestDirectory'
+  value: '$(Build.SourcesDirectory)/azure-aks/manifests'
 - name: 'scriptDirectory'
   value: '$(Build.SourcesDirectory)/azure-aks/scripts'
 - name: 'terraformDirectory'
